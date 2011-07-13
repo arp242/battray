@@ -23,27 +23,7 @@ import os
 import signal
 import subprocess
 import sys
-
-nosound = True
-if sys.platform[:3] == 'win':
-	try:
-		import winsound
-		nosound = False
-	except ImportError:
-		nosound = True
-else:
-	# Only works on Linux and FreeBSD
-	try:
-		import ossaudiodev
-		import wave
-		try:
-			import thread
-		except ImportError:
-			import dummy_thread as thread
-		_soundthread_ = []
-		nosound = False
-	except ImportError:
-		nosound = True
+import traceback
 
 # py-gtk2 2.10 or higher required
 try:
@@ -72,8 +52,6 @@ def Usage():
 	print ""
 	print "  Please see battray(1) for more documentation."
 
-# _config is a global variable that hold the configuration. _p is for the
-# platform file
 _config = None
 _p = None
 
@@ -167,10 +145,11 @@ def LoadConfig(optionfile=''):
 			try:
 				exec open(config, 'r').read()
 				_config = {
+					'file': config,
 					'datadir': datadir,
 					'pollinterval': pollinterval,
 					'icon': icon,
-					'color': color,
+					#'color': color,
 					'blink': blink,
 					'play': play,
 					'run': run,
@@ -178,6 +157,7 @@ def LoadConfig(optionfile=''):
 			except:
 				print >> sys.stderr, "Battray: Unable to load configuration file `%s'" % config
 				print >> sys.stderr, sys.exc_info()[1]
+				print traceback.print_tb(sys.exc_info()[2])
 				sys.exit(1)
 			break
 
@@ -225,7 +205,10 @@ def CheckBatt(tray, data = None):
 	Check battery status & update tray.
 	"""
 
+	global _config
+
 	reload(_p)
+	_config = LoadConfig(_config['file'])
 
 	try:
 		SetIcon(tray, _p.ac, _p.charging, _p.percent, _p.lifetime, _p.tooltip)
@@ -257,12 +240,12 @@ def SetIcon(tray, ac, charging, percent, lifetime, tooltip=''):
 	else:
 		text.append('%i percent battery power remaining.\n' % percent)
 	
-	if charging:
+	if charging or ac:
 		pass
 	elif lifetime == 255:
 		text.append('Unknown lifetime remaining.\n')
 	else:
-		t = lifetime / 3600.0
+		t = lifetime / 60.0
 		text.append('Approximately %.1f hours remaining.\n' % t)
 
 	if charging == None:
@@ -300,7 +283,7 @@ def SetIcon(tray, ac, charging, percent, lifetime, tooltip=''):
 	#		col += 1
 
 	# Warn the user if battery is low
-	if _config['blink']:
+	if _config.get('blink'):
 		tray.set_blinking(True)
 	else:
 		tray.set_blinking(False)
@@ -339,33 +322,7 @@ def AboutDialog(widget, data = None):
 def ReloadConfig(signum, stack):
 	print 'Battray: Caught SIGHUP, reloading platform information.'
 	reload(_p)
-
-def PlaySound(soundfile):
-	"""
-	Play a sound.
-	We expect this to be run inside a new thread, started with something like:
-	_soundthread_.append(thread.start_new_thread(PlaySound, (soundfile,)))
-	"""
-
-	s = wave.open(soundfile, 'rb')
-	(nc,sw,fr,nf,comptype, compname) = s.getparams( )
-	dsp = ossaudiodev.open('/dev/dsp', 'w')
-
-	try:
-		from ossaudiodev import AFMT_S16_NE
-	except ImportError:
-		if byteorder == "little":
-			AFMT_S16_NE = ossaudiodev.AFMT_S16_LE
-		else:
-			AFMT_S16_NE = ossaudiodev.AFMT_S16_BE
-
-	dsp.setparameters(AFMT_S16_NE, nc, fr)
-	data = s.readframes(nf)
-	s.close()
-	dsp.write(data)
-	dsp.close()
-	_soundthread_.remove(thread.get_ident())
-	thread.exit()
+	_config = LoadConfig(_config['file'])
 
 def run(cmd):
 	print cmd; return
@@ -376,29 +333,39 @@ def run(cmd):
 		print >> sys.stderr, "Battray: Something went wrong executing `%s'\n%s" % (
 			cmd, sys.exc_info()[1])
 
-def color(color):
-	print color
-
 def play(sound):
-	print sound; return
-
-	if _config['nosound']:
+	if not _config:
 		return
-	
-	if len(_soundthread_) < 1:
-		if os.path.exists(cmd[4:].strip()):
-			snd = cmd[4:].strip()
-		else:
-			snd = '%s/%s' % (_config['datadir'], cmd[4:].strip())
-			_soundthread_.append(thread.start_new_thread(PlaySound, (snd,)))
+
+	if os.path.exists(sound.strip()):
+		sound = sound.strip()
+	else:
+		sound = '%s/%s' % (_config['datadir'], sound.strip())
+
+	subprocess.Popen(['./playsound.py', sound])
+
+def charging():
+	if _p:
+		return _p.charging
+
+def ac():
+	if _p:
+		return _p.ac
+
+def lifetime():
+	if _p:
+		return _p.lifetime
+	else:
+		return 255
+
+def percent():
+	if _p:
+		return _p.percent
+	else:
+		return 255
 
 if __name__ == '__main__':
 	_config, _p = Init()
-
-	if nosound:
-		_config['nosound'] = True
-	else:
-		_config['nosound'] = False
 
 	# Reload config on kill -HUP
 	signal.signal(signal.SIGHUP, ReloadConfig)

@@ -23,7 +23,7 @@ for line in o.split('\n'):
 			lifetime = -1
 		else:
 			lifetime = value.strip().replace(':', '.')
-			lifetime = int(int(lifetime[0]) * 60 + int(lifetime[1]))
+			lifetime = int(int(lifetime[0]) * 60 + int(lifetime[2]) * 10)
 	elif key.strip() == 'State':
 		if value.strip() == 'charging':
 			charging = True
