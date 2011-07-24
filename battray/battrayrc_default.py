@@ -1,5 +1,5 @@
 #######################################################################
-# Configuration file for Mailtray 1.3
+# Configuration file for Battray 1.3
 # Please see battray(1) for more information.
 #
 # Note: This file is imported in Python, so any valid Python code goes.
@@ -23,11 +23,9 @@ elif not ac():  icon = 'battery.png'
 else: 		      icon = 'error.png'
 
 # Set the color for the status indicator.
-# XXX Color disabled for now, this requires numpy which requires gcc4.4 which
-# is a lot of time & work to install on FreeBSD
-#if percent() <= 50: color = 'yellow'
-#if percent() <= 20: color = 'red'
-#if percent() >= 51: color = 'green'
+if percent() <= 50: color = 'yellow'
+if percent() <= 20: color = 'red'
+if percent() >= 51: color = 'green'
 
 # Blink the status indicator
 if not ac() and lifetime() <= 10: blink = True
@@ -37,19 +35,23 @@ if ac(): blink = False
 # Emit beeps from the PC speaker
 if not ac() and lifetime() <= 10: play('alert.wav')
 
+###
+### A few more advanced examples below. These may not always be wanted or even
+### work (Depends on notebook support/OS), so they're disabled by default
+###
 # Save some power by lowering brightness
 # May not work on all notebooks...
-#if not switchedto_battery: run('xbacklight -set 40')
+#if switchedto() == 'battery': run('xbacklight -set 30')
 
 # Put brightness back up when we are connected to AC
-#if switchedto_ac: run('xbacklight -set 70')
+#if switchedto() == 'ac': run('xbacklight -set 60')
 
 # Turn off screen after two minutes, saves some power.
 # Should work on almost all notebooks ...
-#if switchedto_battery: run('xset dpms 120 120 120')
+#if switchedto() == 'battery': run('xset dpms 120 120 120')
 
 # Turn off screen after 10 mins, default is 40 mins orso
-#if switchedto_ac: run('xset dpms 600 600 600')
+#if switchedto == 'ac': run('xset dpms 600 600 600')
 
 # Shut down if battery status is below 5 minutes
 # Normal users aren't typically allowed to execute shutdown, if you add
@@ -60,4 +62,5 @@ if not ac() and lifetime() <= 10: play('alert.wav')
 #if lifetime <= 4: run('sudo shutdown -h +1 "Battery status very low, shutting down system!"')
 
 # If suspend works on your notebook ...
-#if lifetime() <= 4: run('zzz')
+#if not ac() and lifetime() <= 4:
+#	run('echo "== WARNING: Battery power low. Sleeping" | wall && sleep 10 && "zzz"')

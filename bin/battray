@@ -3,7 +3,7 @@
 # vim:ts=2:sts=2:
 #
 # Battray 1.3 by Martin Tournoij <martin@arp242.net>
-# http://arp242.net/code/battray/
+# http://code.google.com/p/battray/
 #
 # Feel free to use, modify, and redistribute as you see fit. There are no
 # restrictions.
@@ -26,7 +26,6 @@
 
 import getopt
 import os
-import signal
 import subprocess
 import sys
 import traceback
@@ -54,12 +53,14 @@ def Usage():
 	print "\t-d, --datadir\tDatadir to use (For icons)."
 	print "\t-f, --file\tConfiguration file to use."
 	print "\t-i, --interval\tPoll the status every n seconds."
-	print "\t-p, --platform\tSpecify a specific platform file."
+	print "\t-p, --platform\tSpecify a specific platform file/"
+	print "\t              \tWill be imported, so make sure it's in sys.path"
 	print ""
 	print "  Please see battray(1) for more documentation."
 
 _config = None
 _p = None
+_usecolor = True
 
 def Init():
 	"""
@@ -86,6 +87,7 @@ def Init():
 	platform = sys.platform[:-1]
 	cpollinterval = None
 	cdatadir = None
+	cplatform = None
 
 	for opt, arg in options:
 		if opt == '-h' or opt == '--help':
@@ -94,7 +96,7 @@ def Init():
 		elif opt == '-v' or opt == '--version':
 			print 'Battray 1.3'
 			print 'Martin Tournoij <martin@arp242.net>'
-			print 'http://arp242.net/code/battray/'
+			print 'http://code.google.com/p/battray/'
 			sys.exit(0)
 		elif opt == '-f' or opt == '--file':
 			if not os.path.exists(arg):
@@ -102,11 +104,11 @@ def Init():
 				sys.exit(1)
 			optionfile = arg
 		elif opt == '-d' or opt == '--datadir':
-			datadir = arg
+			cdatadir = arg
 		elif opt == '-i' or opt == '--interval':
 			cpollinterval = arg
 		elif opt == '-p' or opt == '--platform':
-			platform = arg
+			cplatform = arg
 
 	_config = LoadConfig(optionfile)
 
@@ -115,9 +117,12 @@ def Init():
 		_config['datadir'] = cdatadir
 
 	if cpollinterval is not None:
-		_config['pollinterval'] = pollinterval
+		_config['pollinterval'] = int(cpollinterval)
 
-	_p = LoadPlatform()
+	if cplatform is not None:
+		platform = cplatform
+
+	_p = LoadPlatform(platform)
 
 	return _config, _p
 
@@ -152,7 +157,7 @@ def LoadConfig(optionfile=''):
 
 	# No config file, use the default
 	if config is None:
-		print 'Using default config file.'
+		print 'Battray: Using default config file.'
 		for f in sys.path:
 			if os.path.exists(f + '/battray/battrayrc_default.py'):
 				config = f + '/battray/battrayrc_default.py'
@@ -166,7 +171,7 @@ def LoadConfig(optionfile=''):
 			'datadir': sys.prefix + '/share/battray',
 			'pollinterval': pollinterval,
 			'icon': icon,
-			#'color': color,
+			'color': color,
 			'blink': blink,
 			'play': play,
 			'run': run,
@@ -187,18 +192,10 @@ def LoadConfig(optionfile=''):
 
 	return _config
 
-def LoadPlatform():
+def LoadPlatform(platform):
 	"""
 	Load/import platform information
 	"""
-
-	# Get platform information
-	platform = sys.platform[:-1]
-	#platformfile = '%s/platforms/%s' % (_config['datadir'], platform)
-	#if platformfile[:3] == '.py':
-	#	platformfile = platform[:-3]
-
-	#sys.path.append(os.path.dirname(platformfile))
 
 	try:
 		_p = __import__('battray.platforms.' + os.path.basename(platform), fromlist=[platform])
@@ -206,7 +203,8 @@ def LoadPlatform():
 		print >> sys.stderr, "Battray: Unable to get information for platform `%s'\n%s" % (
 			platform, sys.exc_info()[1])
 		sys.exit(1)
-	
+
+	ReloadPlatform()
 	return _p
 
 def CheckBatt(tray, data = None):
@@ -216,8 +214,7 @@ def CheckBatt(tray, data = None):
 
 	global _config
 
-	reload(_p)
-	_config = LoadConfig(_config['file'])
+	ReloadPlatform()
 
 	try:
 		SetIcon(tray, _p.ac, _p.charging, _p.percent, _p.lifetime, _p.tooltip)
@@ -233,6 +230,7 @@ def SetIcon(tray, ac, charging, percent, lifetime, tooltip=''):
 	"""
 	Set icon & tooltip.
 	"""
+	global _usecolor
 
 	text = []
 
@@ -267,29 +265,40 @@ def SetIcon(tray, ac, charging, percent, lifetime, tooltip=''):
 
 	icon = gtk.gdk.pixbuf_new_from_file('%s/icons/%s' % (_config['datadir'],
 		_config['icon']))
+
 	# Fill battery icon with background to indicate status. Skip everything
 	# that's black to preserve the plus sign.
-	# XXX Disable this, this feature requires py-numpy, which pulls in gcc4.4
-	# :-(
-	#if not ac or charging:
-	#	fill = gtk.gdk.pixbuf_new_from_file('%s/icons/%s' % (
-	#		_config['datadir'], _config['icon']))
-	#	pixelArray = icon.get_pixels_array()
-	#	# 24 pixels wide
-	#	fillAmount = int(round(percent / 4))
-	#
-	#	col = 2
-	#	while col <= fillAmount + 2:
-	#		row = 10
-	#		while row <= 21:
-	#			# Black pixel
-	#			if pixelArray[row][col][3] == 255:
-	#				row += 1
-	#				continue
-	#			
-	#			fill.copy_area(0, 0, 1, 1, icon, col, row)
-	#			row += 1
-	#		col += 1
+	if not ac or charging:
+		fill = gtk.gdk.pixbuf_new_from_file('%s/icons/%s.png' % (
+			_config['datadir'], _config['color']))
+		
+		# May not always work, this feature requires py-numpy, which is disabled
+		# by default on FreeBSD because it pulls in gcc4.4
+		try:
+			pixelArray = icon.get_pixels_array()
+		except RuntimeError:
+			if _usecolor:
+				_usecolor = False
+				print >> sys.stderr, 'Battray: py-gtk2 needs to be compiled with numpy',
+				print >> sys.stderr, 'to change the color of the status icon'
+
+		if _usecolor:
+			# 24 pixels wide
+			fillamount = int(round(percent / 4))
+		
+			col = 2
+			while col <= fillamount + 2:
+				row = 10
+				while row <= 21:
+					# Black pixel
+					if pixelArray[row][col][3] == 255:
+						row += 1
+						continue
+
+					#print icon, col, row
+					fill.copy_area(0, 0, 1, 1, icon, col, row)
+					row += 1
+				col += 1
 
 	# Warn the user if battery is low
 	if _config.get('blink'):
@@ -323,24 +332,50 @@ def AboutDialog(widget, data = None):
 	about = gtk.AboutDialog()
 	about.set_authors(['Martin Tournoij <martin@arp242.net>', 'Andy Mikhaylenko <andy@neithere.net>'])
 	about.set_version('1.3')
-	about.set_website('http://arp242.net/code/batttray/')
+	about.set_website('http://code.google.com/p/battray/')
 	about.set_comments('Simple program that displays a tray icon to inform you on your notebooks battery status.')
 	about.run()
 	about.destroy()
 
-def ReloadConfig(signum, stack):
-	print 'Battray: Caught SIGHUP, reloading platform information.'
-	reload(_p)
-	_config = LoadConfig(_config['file'])
+def ReloadPlatform():
+	"""
+	Reload platform file, set switchedto* variables
+	"""
+
+	if _p:
+		ac = _p.ac
+		reload(_p)
+
+		if not _p.ac and ac:
+			_p.switchedtobattery = True
+		else:
+			_p.switchedtobattery = False
+
+		if _p.ac and not ac:
+			_p.switchedtoac = True
+		else:
+			_p.switchedtoac = False
 
 def run(cmd):
+	"""
+	Run cmd in shell
+	NOTE: We not *NOT* do any escaping. We assume cmd is already sane.
+	"""
+
 	try:
+		print cmd
 		o = subprocess.Popen([cmd], stdout=subprocess.PIPE, shell=True).communicate()[0]
 	except OSError:
 		print >> sys.stderr, "Battray: Something went wrong executing `%s'\n%s" % (
 			cmd, sys.exc_info()[1])
 
 def play(sound):
+	"""
+	Play sound, which is a wavefile either relative to datadir or an absolute
+	path.
+	We use playway.py to play the sound.
+	"""
+
 	if not _config:
 		return
 
@@ -359,6 +394,17 @@ def ac():
 	if _p:
 		return _p.ac
 
+def switchedto():
+	if _p:
+		if _p.switchedtobattery:
+			return 'battery'
+		elif _p.switchedtoac:
+			return 'ac'
+		else:
+			return False
+	else:
+		return False
+
 def lifetime():
 	if _p:
 		return _p.lifetime
@@ -372,36 +418,33 @@ def percent():
 		return 255
 
 if __name__ == '__main__':
-	_config, _p = Init()
-
-	# Reload config on kill -HUP
-	signal.signal(signal.SIGHUP, ReloadConfig)
-
-	# Tray icon
-	tray = gtk.StatusIcon()
-	tray.connect('activate', CheckBatt)
-	tray.set_visible(True)
-	CheckBatt(tray)
-
-	# The popup menu
-	menu = gtk.Menu()
-	
-	item = gtk.MenuItem('Refresh status')
-	item.connect('activate', CheckBattFromMenu, tray)
-	menu.append(item)
-
-	item = gtk.ImageMenuItem(gtk.STOCK_ABOUT)
-	item.connect('activate', AboutDialog)
-	menu.append(item)
-
-	item = gtk.ImageMenuItem(gtk.STOCK_QUIT)
-	item.connect('activate', Quit, tray)
-	menu.append(item)
-
-	tray.connect('popup-menu', PopupMenu, menu)
-	gobject.timeout_add(_config['pollinterval'] * 1000, CheckBatt, tray)
-
 	try:
+		_config, _p = Init()
+
+		# Tray icon
+		tray = gtk.StatusIcon()
+		tray.connect('activate', CheckBatt)
+		tray.set_visible(True)
+		CheckBatt(tray)
+
+		# The popup menu
+		menu = gtk.Menu()
+		
+		item = gtk.MenuItem('Refresh status')
+		item.connect('activate', CheckBattFromMenu, tray)
+		menu.append(item)
+
+		item = gtk.ImageMenuItem(gtk.STOCK_ABOUT)
+		item.connect('activate', AboutDialog)
+		menu.append(item)
+
+		item = gtk.ImageMenuItem(gtk.STOCK_QUIT)
+		item.connect('activate', Quit, tray)
+		menu.append(item)
+
+		tray.connect('popup-menu', PopupMenu, menu)
+		gobject.timeout_add(_config['pollinterval'] * 1000, CheckBatt, tray)
+
 		gtk.main()
 	except KeyboardInterrupt:
 		print ''
