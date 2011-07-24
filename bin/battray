@@ -58,7 +58,7 @@ def Usage():
 	print ""
 	print "  Please see battray(1) for more documentation."
 
-_config = None
+_config = {}
 _p = None
 _usecolor = True
 
@@ -110,7 +110,7 @@ def Init():
 		elif opt == '-p' or opt == '--platform':
 			cplatform = arg
 
-	_config = LoadConfig(optionfile)
+	_config = LoadConfig(optionfile, True)
 
 	# Override values from config file with commandline arguments
 	if cdatadir is not None:
@@ -126,7 +126,7 @@ def Init():
 
 	return _config, _p
 
-def LoadConfig(optionfile=''):
+def LoadConfig(optionfile='', full=False):
 	"""
 	Try to load the configuration file
 	"""
@@ -157,7 +157,8 @@ def LoadConfig(optionfile=''):
 
 	# No config file, use the default
 	if config is None:
-		print 'Battray: Using default config file.'
+		if full:
+			print 'Battray: Using default config file.'
 		for f in sys.path:
 			if os.path.exists(f + '/battray/battrayrc_default.py'):
 				config = f + '/battray/battrayrc_default.py'
@@ -166,16 +167,17 @@ def LoadConfig(optionfile=''):
 	# exec config file
 	try:
 		exec open(config, 'r').read()
-		_config = {
-			'file': config,
-			'datadir': sys.prefix + '/share/battray',
-			'pollinterval': pollinterval,
-			'icon': icon,
-			'color': color,
-			'blink': blink,
-			'play': play,
-			'run': run,
-		}
+		_config['icon'] = icon
+		_config['color'] = color
+		_config['blink'] = blink
+		_config['play'] = play
+		_config['run'] = run
+
+		if full:
+			_config['file'] = config
+			_config['datadir'] = sys.prefix + '/share/battray'
+			_config['pollinterval'] = pollinterval
+
 	except:
 		print >> sys.stderr, "Battray: Unable to load configuration file `%s'" % config
 		print >> sys.stderr, sys.exc_info()[1]
@@ -190,7 +192,8 @@ def LoadConfig(optionfile=''):
 		print >> sys.stderr, "Battray: Datadir `%s' doesn't exist." % _config['datadir']
 		sys.exit(1)
 
-	return _config
+	if full:
+		return _config
 
 def LoadPlatform(platform):
 	"""
@@ -214,6 +217,7 @@ def CheckBatt(tray, data = None):
 
 	global _config
 
+	LoadConfig()
 	ReloadPlatform()
 
 	try:
@@ -271,7 +275,7 @@ def SetIcon(tray, ac, charging, percent, lifetime, tooltip=''):
 	if not ac or charging:
 		fill = gtk.gdk.pixbuf_new_from_file('%s/icons/%s.png' % (
 			_config['datadir'], _config['color']))
-		
+
 		# May not always work, this feature requires py-numpy, which is disabled
 		# by default on FreeBSD because it pulls in gcc4.4
 		try:
