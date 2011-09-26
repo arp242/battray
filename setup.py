@@ -10,6 +10,9 @@ if len(sys.argv) > 1 and sys.argv[1] == 'man':
 	subprocess.Popen(
 		['txt2tags -o - --target man doc/battray.t2t | grep -Ev $^ > doc/battray.1'],
 		shell=True)
+	subprocess.Popen(
+		['txt2tags -o - --target gwiki doc/battray.t2t | grep -Ev $^ > doc/battray.gwiki'],
+		shell=True)
 	exit(0)
 
 setup(
