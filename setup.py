@@ -17,10 +17,10 @@ if len(sys.argv) > 1 and sys.argv[1] == 'man':
 
 setup(
 	name = 'battray',
-	version = '1.3',
+	version = '1.4',
 	author = 'Martin Tournoij',
 	author_email = 'martin@arp242.net',
-	url = 'http://arp242.net/code/battray/',
+	url = 'http://code.google.com/p/battray/',
 	description = '',
 	download_url = '',
 	classifiers = '',
