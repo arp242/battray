@@ -34,6 +34,8 @@ for line in o.split('\n'):
 			ac = True
 		else:
 			ac = False
+	elif key.strip() == 'State' and value.strip() == 'not present':
+		ac = None
 
 if charging:
 	ac = True
