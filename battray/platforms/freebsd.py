@@ -25,12 +25,12 @@ for line in o.split('\n'):
 			lifetime = value.strip().replace(':', '.')
 			lifetime = int(int(lifetime[0]) * 60 + int(lifetime[2]) * 10)
 	elif key.strip() == 'State':
-		if value.strip() == 'charging':
+		if value.strip() == 'charging' or value.strip() == 'high':
 			charging = True
 		else:
 			charging = False
 	elif key.strip() == 'Present rate':
-		if value.strip() == '0 mW':
+		if value.strip() == '0 mW' or value.strip().endswith('(0 mW)'):
 			ac = True
 		else:
 			ac = False
