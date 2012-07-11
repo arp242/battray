@@ -25,7 +25,7 @@ for line in o.split('\n'):
 			lifetime = value.strip().replace(':', '.')
 			lifetime = int(int(lifetime[0]) * 60 + int(lifetime[2]) * 10)
 	elif key.strip() == 'State':
-		if value.strip() == 'charging' or value.strip() == 'high':
+		if value.strip() == 'charging':
 			charging = True
 		else:
 			charging = False
