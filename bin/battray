@@ -266,14 +266,14 @@ def SetIcon(tray, ac, charging, percent, lifetime, tooltip=''):
 	elif not ac:
 		text.append('Running on battery.\n')
 	
-	if percent == 255:
+	if percent == -1:
 		text.append('Cannot get battery percentage status.\n')
 	else:
 		text.append('%i percent battery power remaining.\n' % percent)
 	
 	if charging or ac:
 		pass
-	elif lifetime == 255:
+	elif lifetime == -1:
 		text.append('Unknown lifetime remaining.\n')
 	else:
 		t = lifetime / 60.0
@@ -438,16 +438,16 @@ def switchedto():
 		return False
 
 def lifetime():
-	if _p:
+	if _p and _p.lifetime > -1:
 		return _p.lifetime
 	else:
-		return 255
+		return 999
 
 def percent():
-	if _p:
+	if _p and _p.percent > -1:
 		return _p.percent
 	else:
-		return 255
+		return 999
 
 def PlaySound(soundfile):
 	"""
