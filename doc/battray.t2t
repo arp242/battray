@@ -1,6 +1,6 @@
 battray
 Martin Tournoij <martin@arp242.net>
-Battray 1.4
+Battray 1.5
 
 %
 %!postproc(man): '@@' '\n'
@@ -17,19 +17,24 @@ Battray -- Display an battery status notification tray icon
 battray is a tray icon aka status icon to notify you of your battery status and do
 some action depending on it.
 
- //-h//, -//-help//
-     Display help message and exit.
- //-v//, //--version//
-     Display version and exit.
- //-p//, //--platform//
-     Use this platform file, normally this is autodetected.
-     Will be imported, so make sure it's in sys.path
- //-d//, //--datadir//
-     Datadir to get icons and platform file from.
- //-f//, //--file//
-     Configuration file to use. A configuration file is mandatory.
- //-i//, //--interval//
-     Poll the system every n seconds.
+      //-h//, -//-help//
+        Display help message and exit.
+
+      //-v//, //--version//
+        Display version and exit.
+
+      //-p//, //--platform//
+        Use this platform file, normally this is autodetected.
+        Will be imported, so make sure it's in sys.path
+
+      //-d//, //--datadir//
+        Datadir to get icons and platform file from.
+
+      //-f//, //--file//
+        Configuration file to use. A configuration file is mandatory.
+
+      //-i//, //--interval//
+        Poll the system every n seconds.
 
 = CONFIGURATION =
 The configuration file is imported in Python, any valid Python code goes.
@@ -56,49 +61,61 @@ match wins:
 
 == Generic options ==
 
- //datadir// (string)
-     Datadir to get icons and platform file from. Usually not required.
+//datadir// (string)
+        Datadir to get icons and platform file from. Usually not
+        required.
 
- //pollInterval// (int)
-     Poll the system every n seconds.
+//pollInterval// (int)
+        Poll the system every n seconds.
+
 == Available functions ==
 
- //charging()//
-       Return True if notebook is charging the battery
+//charging()//
+        Return True if notebook is charging the battery
 
- //ac()//
-       Return True if notebook is connected to AC power
+//ac()//
+        Return True if notebook is connected to AC power
 
- //percent()//
-       Return percentage of battery time remaining
+//percent()//
+        Return percentage of battery time remaining
 
- //lifetime()//
-       Return remaining battery time in minutes
+//lifetime()//
+        Return remaining battery time in minutes
 
- //switchedto()//
-       Return 'battery' if we switched to battery since last poll.
-      'ac' if we  switched to ac since last poll.
+//switchedto()//
+        Return 'battery' if we switched to battery since last poll.
+        'ac' if we  switched to ac since last poll.
 
- //run(cmd)//
-       Run cmd (string) in shell. Note: no escaping will be done on the
-       command.
+//run(cmd)//
+        Run cmd (string) in shell. Note: no escaping will be done on
+        the command.
+
+//play(sound)//
+        Play a sound. The path if relative to the datadir.
+
+//playonce(sound, id)//
+        Play a sound once until reset_playonce() is called for this id.
+        'id' can be any string.
+
+//playonce(id)//
+        Reset the playonce flag for the sound id
 
 == Available variables ==
 
- //icon = 'file.png'//
-       Set icon to this file. Can be relative to datadir
+//icon = 'file.png'//
+        Set icon to this file. Can be relative to datadir
 
- //color = 'red|yellow|green'//
-       Fill battery icon with this color. Available are 'yellow', 'red', and
-       'green'.
+//color = 'red|yellow|green'//
+        Fill battery icon with this color. Available are 'yellow', 'red',
+        and 'green'.
 
- //blink = True|False//
-       Set to True to blink the icon (Do not use is presence of weeping
-       angels!)
+//blink = True|False//
+        Set to True to blink the icon (Do not use is presence of
+        weeping angels!)
 
 = PLATFORM FILE =
-Battray gets it's data from using a command-line utility provided by the
-Operating System.  Almost every OS a slightly different utility and/or to
+Battray gets its data from using a command-line utility provided by the
+Operating System. Almost every OS a slightly different utility and/or to
 fetch the battery status, this is why we need a platform file to imple-
 ment each platform.
 
@@ -107,24 +124,26 @@ script. Any valid Python syntax goes.
 
 List of mandatory variables, these must be present:
 
- //ac// (bool)
-     Connected to AC? None if unknown.
- //percent// (int)
-     Battery power remaining in percent. 255 if unknown.
- //lifetime// (int)
-     Battery time remaining in minutes. 255 if unknown.
- //charging// (bool)
-     Are we charging the battery? None if unknown.
+
+//ac// (bool)
+        Connected to AC? None if unknown.
+
+//percent// (int)
+        Battery power remaining in percent. 255 if unknown.
+
+//lifetime// (int)
+        Battery time remaining in minutes. 255 if unknown.
+
+//charging// (bool)
+        Are we charging the battery? None if unknown.
 
 Optional variables, these will just be ignored if not set:
 
- //tooltip// (string)
-     Additional info in the tooltip.
+
+//tooltip// (string)
+        Additional info in the tooltip.
 
 = BUGS =
-- The configuration could be a bit easier, the fact that it’s imported in Python
-makes configuration pretty flexible, but also makes it more difficult for
-non-python programmers.
 - Multiple batteries are not supported.
 
 

@@ -1,4 +1,4 @@
-.TH "battray" 1 "Battray 1.4" "Martin Tournoij <martin@arp242.net>"
+.TH "battray" 1 "Battray 1.5" "Martin Tournoij <martin@arp242.net>"
 .SH NAME
 .P
 Battray \-\- Display an battery status notification tray icon
@@ -9,19 +9,24 @@ battray [-hv] [-p platform] [-d datadir] [-f configfile] [-i pol_interval]
 battray is a tray icon aka status icon to notify you of your battery status and do
 some action depending on it.
 .P
- \fI\-h\fR, \-\fI\-help\fR
-     Display help message and exit.
- \fI\-v\fR, \fI\-\-version\fR
-     Display version and exit.
- \fI\-p\fR, \fI\-\-platform\fR
-     Use this platform file, normally this is autodetected.
-     Will be imported, so make sure it's in sys.path
- \fI\-d\fR, \fI\-\-datadir\fR
-     Datadir to get icons and platform file from.
- \fI\-f\fR, \fI\-\-file\fR
-     Configuration file to use. A configuration file is mandatory.
- \fI\-i\fR, \fI\-\-interval\fR
-     Poll the system every n seconds.
+      \fI\-h\fR, \-\fI\-help\fR
+        Display help message and exit.
+.P
+      \fI\-v\fR, \fI\-\-version\fR
+        Display version and exit.
+.P
+      \fI\-p\fR, \fI\-\-platform\fR
+        Use this platform file, normally this is autodetected.
+        Will be imported, so make sure it's in sys.path
+.P
+      \fI\-d\fR, \fI\-\-datadir\fR
+        Datadir to get icons and platform file from.
+.P
+      \fI\-f\fR, \fI\-\-file\fR
+        Configuration file to use. A configuration file is mandatory.
+.P
+      \fI\-i\fR, \fI\-\-interval\fR
+        Poll the system every n seconds.
 .SH CONFIGURATION
 .P
 The configuration file is imported in Python, any valid Python code goes.
@@ -59,48 +64,59 @@ sys.path + /battray/battrayrc_default.py
 .RE
 .SS Generic options
 .P
- \fIdatadir\fR (string)
-     Datadir to get icons and platform file from. Usually not required.
+\fIdatadir\fR (string)
+        Datadir to get icons and platform file from. Usually not
+        required.
 .P
- \fIpollInterval\fR (int)
-     Poll the system every n seconds.
+\fIpollInterval\fR (int)
+        Poll the system every n seconds.
 .SS Available functions
 .P
- \fIcharging()\fR
-       Return True if notebook is charging the battery
+\fIcharging()\fR
+        Return True if notebook is charging the battery
 .P
- \fIac()\fR
-       Return True if notebook is connected to AC power
+\fIac()\fR
+        Return True if notebook is connected to AC power
 .P
- \fIpercent()\fR
-       Return percentage of battery time remaining
+\fIpercent()\fR
+        Return percentage of battery time remaining
 .P
- \fIlifetime()\fR
-       Return remaining battery time in minutes
+\fIlifetime()\fR
+        Return remaining battery time in minutes
 .P
- \fIswitchedto()\fR
-       Return 'battery' if we switched to battery since last poll.
-      'ac' if we  switched to ac since last poll.
+\fIswitchedto()\fR
+        Return 'battery' if we switched to battery since last poll.
+        'ac' if we  switched to ac since last poll.
 .P
- \fIrun(cmd)\fR
-       Run cmd (string) in shell. Note: no escaping will be done on the
-       command.
+\fIrun(cmd)\fR
+        Run cmd (string) in shell. Note: no escaping will be done on
+        the command.
+.P
+\fIplay(sound)\fR
+        Play a sound. The path if relative to the datadir.
+.P
+\fIplayonce(sound, id)\fR
+        Play a sound once until reset_playonce() is called for this id.
+        'id' can be any string.
+.P
+\fIplayonce(id)\fR
+        Reset the playonce flag for the sound id
 .SS Available variables
 .P
- \fIicon = 'file.png'\fR
-       Set icon to this file. Can be relative to datadir
+\fIicon = 'file.png'\fR
+        Set icon to this file. Can be relative to datadir
 .P
- \fIcolor = 'red|yellow|green'\fR
-       Fill battery icon with this color. Available are 'yellow', 'red', and
-       'green'.
+\fIcolor = 'red|yellow|green'\fR
+        Fill battery icon with this color. Available are 'yellow', 'red',
+        and 'green'.
 .P
- \fIblink = True|False\fR
-       Set to True to blink the icon (Do not use is presence of weeping
-       angels!)
+\fIblink = True|False\fR
+        Set to True to blink the icon (Do not use is presence of
+        weeping angels!)
 .SH PLATFORM FILE
 .P
-Battray gets it's data from using a command\-line utility provided by the
-Operating System.  Almost every OS a slightly different utility and/or to
+Battray gets its data from using a command\-line utility provided by the
+Operating System. Almost every OS a slightly different utility and/or to
 fetch the battery status, this is why we need a platform file to imple\-
 ment each platform.
 .P
@@ -109,25 +125,24 @@ script. Any valid Python syntax goes.
 .P
 List of mandatory variables, these must be present:
 .P
- \fIac\fR (bool)
-     Connected to AC? None if unknown.
- \fIpercent\fR (int)
-     Battery power remaining in percent. 255 if unknown.
- \fIlifetime\fR (int)
-     Battery time remaining in minutes. 255 if unknown.
- \fIcharging\fR (bool)
-     Are we charging the battery? None if unknown.
+\fIac\fR (bool)
+        Connected to AC? None if unknown.
+.P
+\fIpercent\fR (int)
+        Battery power remaining in percent. 255 if unknown.
+.P
+\fIlifetime\fR (int)
+        Battery time remaining in minutes. 255 if unknown.
+.P
+\fIcharging\fR (bool)
+        Are we charging the battery? None if unknown.
 .P
 Optional variables, these will just be ignored if not set:
 .P
- \fItooltip\fR (string)
-     Additional info in the tooltip.
+\fItooltip\fR (string)
+        Additional info in the tooltip.
 .SH BUGS
 .RS
-.IP \(bu 3
-The configuration could be a bit easier, the fact that it’s imported in Python
-makes configuration pretty flexible, but also makes it more difficult for
-non\-python programmers.
 .IP \(bu 3
 Multiple batteries are not supported.
 .RE
