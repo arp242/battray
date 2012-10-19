@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 #
 # Battray 1.5 by Martin Tournoij <martin@arp242.net>
-# http://code.google.com/p/battray/
+# https://bitbucket.org/Carpetsmoker/battray
 #
 # Feel free to use, modify, and redistribute as you see fit. There are no
 # restrictions.
@@ -18,8 +18,7 @@
 # FreeBSD, OpenBSD, Linux
 #
 # Adding a new platform is usually very easy!
-# For information, take a look at:
-# http://code.google.com/p/battray/wiki/Manual#Platform
+# For information, take a look at the manpage
 #
 
 import getopt
@@ -116,7 +115,7 @@ def Init():
 		elif opt == '-v' or opt == '--version':
 			print 'Battray 1.5'
 			print 'Martin Tournoij <martin@arp242.net>'
-			print 'http://code.google.com/p/battray/'
+			print 'https://bitbucket.org/Carpetsmoker/battray'
 			sys.exit(0)
 		elif opt == '-f' or opt == '--file':
 			if not os.path.exists(arg):
@@ -356,7 +355,7 @@ def AboutDialog(widget, data = None):
 	about = gtk.AboutDialog()
 	about.set_authors(['Martin Tournoij <martin@arp242.net>', 'Andy Mikhaylenko <andy@neithere.net>', 'Keith W. Blackwell'])
 	about.set_version('1.5')
-	about.set_website('http://code.google.com/p/battray/')
+	about.set_website('https://bitbucket.org/Carpetsmoker/battray')
 	about.set_comments('Simple program that displays a tray icon to inform you on your notebooks battery status.')
 	about.run()
 	about.destroy()

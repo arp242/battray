@@ -20,7 +20,7 @@ setup(
 	version = '1.5',
 	author = 'Martin Tournoij',
 	author_email = 'martin@arp242.net',
-	url = 'http://code.google.com/p/battray/',
+	url = 'https://bitbucket.org/Carpetsmoker/battray',
 	description = '',
 	download_url = '',
 	classifiers = '',
