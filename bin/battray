@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 #
-# Battray 1.5 by Martin Tournoij <martin@arp242.net>
-# https://bitbucket.org/Carpetsmoker/battray
+# Battray 1.6 by Martin Tournoij <martin@arp242.net>
+# https://code.arp242.net/battray
 #
 # Feel free to use, modify, and redistribute as you see fit. There are no
 # restrictions.
@@ -21,39 +21,48 @@
 # For information, take a look at the manpage
 #
 
+from __future__ import print_function
+
 import getopt
+import imp
 import os
 import subprocess
 import sys
 import traceback
 
-try:
-	import thread
-except ImportError:
-	import dummy_thread as thread
+if sys.version_info[0] == 2:
+	try:
+		import thread as _thread
+	except ImportError:
+		import _dummy_thread as dummy_thread
+else:
+	try:
+		import _thread
+	except ImportError:
+		import _dummy_thread
 
 # py-gtk2 2.10 or higher required
 try:
 	import gobject
 	import gtk
 except ImportError:
-	print >> sys.stderr, 'Battray: Error, PyGTK 2.10 or higher is required, unable to find PyGTK.'
-	print >> sys.stderr, 'Battray: PyGTK homepage http://www.pygtk.org/'
+	print('Battray: Error, PyGTK 2.10 or higher is required, unable to find PyGTK.', file=sys.stderr)
+	print('Battray: PyGTK homepage http://www.pygtk.org/', file=sys.stderr)
 	sys.exit(1)
 
 # Only works on Linux and FreeBSD
 try:
 	import ossaudiodev
 except ImportError:
-	print 'Unable to load ossaudiodev module'
-	print sys.exc_info()[1]
+	print('Unable to load ossaudiodev module')
+	print(sys.exc_info()[1])
 	sys.exit(1)
 
 try:
 	import wave
 except ImportError:
-	print 'Unable to load wave module'
-	print sys.exc_info()[1]
+	print('Unable to load wave module')
+	print(sys.exc_info()[1])
 	sys.exit(1)
 
 
@@ -63,18 +72,18 @@ def Usage():
 	Note: We do not exit
 	"""
 
-	print "  Usage: %s [-hv] [-p platform] [-d datadir] [-f configfile]" % os.path.basename(sys.argv[0])
-	print "  [-i pol_interval]"
-	print ""
-	print "\t-h, --help\tPrint this help message and exit."
-	print "\t-v, --version\tPrint version and exit."
-	print "\t-d, --datadir\tDatadir to use (For icons)."
-	print "\t-f, --file\tConfiguration file to use."
-	print "\t-i, --interval\tPoll the status every n seconds."
-	print "\t-p, --platform\tSpecify a specific platform file/"
-	print "\t              \tWill be imported, so make sure it's in sys.path"
-	print ""
-	print "  Please see battray(1) for more documentation."
+	print("  Usage: %s [-hv] [-p platform] [-d datadir] [-f configfile]" % os.path.basename(sys.argv[0]))
+	print("  [-i pol_interval]")
+	print("")
+	print("\t-h, --help\tPrint this help message and exit.")
+	print("\t-v, --version\tPrint version and exit.")
+	print("\t-d, --datadir\tDatadir to use (For icons).")
+	print("\t-f, --file\tConfiguration file to use.")
+	print("\t-i, --interval\tPoll the status every n seconds.")
+	print("\t-p, --platform\tSpecify a specific platform file/")
+	print("\t              \tWill be imported, so make sure it's in sys.path")
+	print("")
+	print("  Please see battray(1) for more documentation.")
 
 _config = {}
 _p = None
@@ -89,8 +98,8 @@ def Init():
 	# Make sure we're using the right PyGTK version
 	ver = float('%i.%i' % (gtk.ver[0], gtk.ver[1]))
 	if ver <= 2.10:
-		print >> sys.stderr, 'Battray: Error, PyGTK 2.10 or higher is required, found version %.2f' % ver
-		print >> sys.stderr, 'Battray: PyGTK homepage http://www.pygtk.org/'
+		print('Battray: Error, PyGTK 2.10 or higher is required, found version %.2f' % ver, file=sys.stderr)
+		print('Battray: PyGTK homepage http://www.pygtk.org/', file=sys.stderr)
 		sys.exit(1)
 	
 	# Parse commandline arguments.
@@ -99,7 +108,7 @@ def Init():
 			['help', 'version', 'datadir=', 'file=', 'platform=', 'interval='])
 	except getopt.GetoptError:
 		Usage()
-		print >> sys.stderr, "\nBattray: Error,", sys.exc_info()[1]
+		print("\nBattray: Error,", sys.exc_info()[1], file=sys.stderr)
 		sys.exit(1)
 
 	optionfile = ''
@@ -113,13 +122,13 @@ def Init():
 			Usage()
 			sys.exit(0)
 		elif opt == '-v' or opt == '--version':
-			print 'Battray 1.5'
-			print 'Martin Tournoij <martin@arp242.net>'
-			print 'https://bitbucket.org/Carpetsmoker/battray'
+			print('Battray 1.6')
+			print('Martin Tournoij <martin@arp242.net>')
+			print('https://code.arp242.net/battray')
 			sys.exit(0)
 		elif opt == '-f' or opt == '--file':
 			if not os.path.exists(arg):
-				print >> sys.stderr, "Battray: Configuration file `%s' doesn't exists." % arg
+				print("Battray: Configuration file `%s' doesn't exists." % arg, file=sys.stderr)
 				sys.exit(1)
 			optionfile = arg
 		elif opt == '-d' or opt == '--datadir':
@@ -177,7 +186,7 @@ def LoadConfig(optionfile='', full=False):
 	# No config file, use the default
 	if config is None:
 		if full:
-			print 'Battray: Using default config file.'
+			print('Battray: Using default config file.')
 		for f in sys.path:
 			if os.path.exists(f + '/battray/battrayrc_default.py'):
 				config = f + '/battray/battrayrc_default.py'
@@ -185,7 +194,7 @@ def LoadConfig(optionfile='', full=False):
 
 	# exec config file
 	try:
-		exec open(config, 'r').read()
+		exec(open(config, 'r').read())
 		_config['icon'] = icon
 		_config['color'] = color
 		_config['blink'] = blink
@@ -198,9 +207,9 @@ def LoadConfig(optionfile='', full=False):
 			_config['pollinterval'] = pollinterval
 
 	except:
-		print >> sys.stderr, "Battray: Unable to load configuration file `%s'" % config
-		print >> sys.stderr, sys.exc_info()[1]
-		print traceback.print_tb(sys.exc_info()[2])
+		print("Battray: Unable to load configuration file `%s'" % config, file=sys.stderr)
+		print(sys.exc_info()[1], file=sys.stderr)
+		print(traceback.print_tb(sys.exc_info()[2]))
 		sys.exit(1)
 
 	# Just in case someone added quotes
@@ -208,7 +217,7 @@ def LoadConfig(optionfile='', full=False):
 
 	# Sanity checking
 	if not os.path.exists(_config['datadir']):
-		print >> sys.stderr, "Battray: Datadir `%s' doesn't exist." % _config['datadir']
+		print("Battray: Datadir `%s' doesn't exist." % _config['datadir'], file=sys.stderr)
 		sys.exit(1)
 
 	if full:
@@ -222,8 +231,8 @@ def LoadPlatform(platform):
 	try:
 		_p = __import__('battray.platforms.' + os.path.basename(platform), fromlist=[platform])
 	except ImportError:
-		print >> sys.stderr, "Battray: Unable to get information for platform `%s'\n%s" % (
-			platform, sys.exc_info()[1])
+		print("Battray: Unable to get information for platform `%s'\n%s" % (
+			platform, sys.exc_info()[1]), file=sys.stderr)
 		sys.exit(1)
 
 	ReloadPlatform()
@@ -302,8 +311,8 @@ def SetIcon(tray, ac, charging, percent, lifetime, tooltip=''):
 		except RuntimeError:
 			if _usecolor:
 				_usecolor = False
-				print >> sys.stderr, 'Battray: py-gtk2 needs to be compiled with numpy',
-				print >> sys.stderr, 'to change the color of the status icon'
+				print('Battray: py-gtk2 needs to be compiled with numpy', end=' ', file=sys.stderr)
+				print('to change the color of the status icon', file=sys.stderr)
 
 		if _usecolor:
 			# 24 pixels wide
@@ -354,8 +363,8 @@ def Quit(widget, data = None):
 def AboutDialog(widget, data = None):
 	about = gtk.AboutDialog()
 	about.set_authors(['Martin Tournoij <martin@arp242.net>', 'Andy Mikhaylenko <andy@neithere.net>', 'Keith W. Blackwell'])
-	about.set_version('1.5')
-	about.set_website('https://bitbucket.org/Carpetsmoker/battray')
+	about.set_version('1.6')
+	about.set_website('https://code.arp242.net/battray')
 	about.set_comments('Simple program that displays a tray icon to inform you on your notebooks battery status.')
 	about.run()
 	about.destroy()
@@ -367,7 +376,7 @@ def ReloadPlatform():
 
 	if _p:
 		ac = _p.ac
-		reload(_p)
+		imp.reload(_p)
 
 		if not _p.ac and ac:
 			_p.switchedtobattery = True
@@ -386,11 +395,11 @@ def run(cmd):
 	"""
 
 	try:
-		print cmd
+		print(cmd)
 		o = subprocess.Popen([cmd], stdout=subprocess.PIPE, shell=True).communicate()[0]
 	except OSError:
-		print >> sys.stderr, "Battray: Something went wrong executing `%s'\n%s" % (
-			cmd, sys.exc_info()[1])
+		print("Battray: Something went wrong executing `%s'\n%s" % (
+			cmd, sys.exc_info()[1]), file=sys.stderr)
 
 def play(sound):
 	"""
@@ -407,7 +416,7 @@ def play(sound):
 	else:
 		sound = '%s/%s' % (_config['datadir'], sound.strip())
 
-	thread.start_new_thread(PlaySound, (sound,))
+	_thread.start_new_thread(PlaySound, (sound,))
 
 def playonce(sound, id):
 	if not _playonce.get(id):
@@ -459,8 +468,8 @@ def PlaySound(soundfile):
 	try:
 		dsp = ossaudiodev.open('/dev/dsp', 'w')
 	except IOError:
-		print 'Unable to open /dev/dsp'
-		print sys.exc_info()[1]
+		print('Unable to open /dev/dsp')
+		print(sys.exc_info()[1])
 		sys.exit(1)
 
 	try:
@@ -477,7 +486,7 @@ def PlaySound(soundfile):
 	dsp.write(data)
 	dsp.close()
 
-	thread.exit()
+	_thread.exit()
 
 if __name__ == '__main__':
 	try:
@@ -509,5 +518,5 @@ if __name__ == '__main__':
 
 		gtk.main()
 	except KeyboardInterrupt:
-		print ''
+		print('')
 		sys.exit(0)

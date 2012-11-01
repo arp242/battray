@@ -4,4 +4,4 @@ For installation, run:
 Running from the source directory is not supported.
 
 For more docs, see:
-https://bitbucket.org/Carpetsmoker/battray/wiki/Home
+https://code.arp242.net/battray/wiki/Home

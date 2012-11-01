@@ -20,7 +20,7 @@ setup(
 	version = '1.5',
 	author = 'Martin Tournoij',
 	author_email = 'martin@arp242.net',
-	url = 'https://bitbucket.org/Carpetsmoker/battray',
+	url = 'https://code.arp242.net/battray',
 	description = '',
 	download_url = '',
 	classifiers = '',
