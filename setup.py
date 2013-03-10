@@ -6,28 +6,19 @@ import sys
 
 from distutils.core import setup
 
-if len(sys.argv) > 1 and sys.argv[1] == 'man':
-	subprocess.Popen(
-		['txt2tags -o - --target man doc/battray.t2t | grep -Ev $^ > doc/battray.1'],
-		shell=True)
-	subprocess.Popen(
-		['txt2tags -o - --target gwiki doc/battray.t2t | grep -Ev $^ > doc/battray.gwiki'],
-		shell=True)
-	exit(0)
-
 setup(
 	name = 'battray',
-	version = '1.5',
+	version = '1.6',
 	author = 'Martin Tournoij',
 	author_email = 'martin@arp242.net',
-	url = 'https://code.arp242.net/battray',
+	url = 'http://code.arp242.net/battray',
 	description = '',
 	download_url = '',
 	classifiers = '',
 	platforms = '',
 	license = '',
 	packages = ['battray', 'battray/platforms'],
-	scripts = glob.glob('bin/*'),
+	scripts = ['bin/battray'],
 	data_files = [
 		('share/battray', ['data/alert.wav']),
 		('share/battray/icons', glob.glob('data/icons/*')),

@@ -1,10 +1,10 @@
 #!/usr/bin/env python
+# encoding: utf8
 #
-# Battray 1.6 by Martin Tournoij <martin@arp242.net>
-# https://code.arp242.net/battray
+# http://code.arp242.net/battray
 #
-# Feel free to use, modify, and redistribute as you see fit. There are no
-# restrictions.
+# Copyright © 2009-2013 Martin Tournoij <martin@arp242.net>
+# See below for full copyright
 #
 ########## With additional contributions from:
 # Andy Mikhaylenko <andy@neithere.net>
@@ -124,7 +124,7 @@ def Init():
 		elif opt == '-v' or opt == '--version':
 			print('Battray 1.6')
 			print('Martin Tournoij <martin@arp242.net>')
-			print('https://code.arp242.net/battray')
+			print('http://code.arp242.net/battray')
 			sys.exit(0)
 		elif opt == '-f' or opt == '--file':
 			if not os.path.exists(arg):
@@ -195,9 +195,10 @@ def LoadConfig(optionfile='', full=False):
 	# exec config file
 	try:
 		exec(open(config, 'r').read())
-		_config['icon'] = icon
-		_config['color'] = color
+		_config['ac'] = ac
 		_config['blink'] = blink
+		_config['color'] = color
+		_config['icon'] = icon
 		_config['play'] = play
 		_config['run'] = run
 
@@ -364,7 +365,7 @@ def AboutDialog(widget, data = None):
 	about = gtk.AboutDialog()
 	about.set_authors(['Martin Tournoij <martin@arp242.net>', 'Andy Mikhaylenko <andy@neithere.net>', 'Keith W. Blackwell'])
 	about.set_version('1.6')
-	about.set_website('https://code.arp242.net/battray')
+	about.set_website('http://code.arp242.net/battray')
 	about.set_comments('Simple program that displays a tray icon to inform you on your notebooks battery status.')
 	about.run()
 	about.destroy()
@@ -520,3 +521,26 @@ if __name__ == '__main__':
 	except KeyboardInterrupt:
 		print('')
 		sys.exit(0)
+
+
+# The MIT License (MIT)
+#
+# Copyright © 2009-2013 Martin Tournoij
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to
+# deal in the Software without restriction, including without limitation the
+# rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
+# sell copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+# FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+# IN THE SOFTWARE.

@@ -1,5 +1,5 @@
 #######################################################################
-# Configuration file for Battray 1.5
+# Configuration file for Battray 1.6
 # Please see battray(1) for more information.
 #
 # Note: This file is imported in Python, so any valid Python code goes.
@@ -34,12 +34,9 @@ if ac():                          blink = False
 
 # Play sounds if the battery is getting low
 if not ac():
-	if lifetime() < 15:
-		playonce('alert.wav', '1')
-	elif lifetime() < 10:
-		playonce('alert.wav', '2')
-	elif lifetime() < 5:
-		play('alert.wav')
+	if lifetime() < 15:    playonce('alert.wav', '1')
+	elif lifetime() < 10:  playonce('alert.wav', '2')
+	elif lifetime() < 5:   play('alert.wav')
 else:
 	reset_playonce('1')
 	reset_playonce('2')

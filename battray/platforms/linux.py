@@ -7,6 +7,9 @@ import subprocess
 
 __all__ = ['ac', 'charging', 'percent', 'lifetime', 'tooltip']
 
+ac = charging = None
+percent = lifetime = 999
+
 # XXX what if there are more batteries?
 BATTERY = 'Battery #1'
 

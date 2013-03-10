@@ -12,6 +12,9 @@
 
 import subprocess
 
+ac = charging = None
+percent = lifetime = 999
+
 def sysctl(name):
 	o = subprocess.Popen(['/sbin/sysctl', name], stdout=subprocess.PIPE,
 		stderr=subprocess.PIPE).communicate()[0]
