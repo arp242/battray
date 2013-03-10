@@ -1,6 +1,6 @@
 Battray is a fairly simply tray icon to show your laptop’s battery status.
 It's simple, easy, fairly environment-independent, and ‘just works’ without
-tons of (Gnome|KDE|..) dependencies.
+tons of (Gnome|KDE|..) dependencies. [Here’s a screenshot][2].
 
 You can also configure it to play annoying sounds if your battery is getting low,
 dim the screen when you switch from AC to battery, etc.
@@ -86,3 +86,4 @@ Version 1.0, 20090816
 - Initial release.
 
 [1]: https://bitbucket.org/Carpetsmoker/battray/src/db6f2319bb8de35440845902a849c67798ef7fce/battray/platforms/README.TXT?at=default
+[2]: https://bitbucket.org/Carpetsmoker/battray/raw/ce21d3ebca4df6ef4c13687ebf6c72f45e9e6390/doc/screenshot.png
