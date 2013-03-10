@@ -36,7 +36,7 @@ For the full documentation, look at the manpage.
 
 ChangeLog
 =========
-Version 1.6, unreleased
+Version 1.6, not yet released
 --------------------
 - Support both Python 2 & 3
 - Bugfix: Don't panic if there's no battery present (again...)
