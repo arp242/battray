@@ -3,23 +3,22 @@
 #
 # http://code.arp242.net/battray
 #
-# Copyright © 2009-2013 Martin Tournoij <martin@arp242.net>
+# Copyright © 2009-2014 Martin Tournoij <martin@arp242.net>
 # See below for full copyright
 #
-########## With additional contributions from:
+# With additional contributions from:
 # Andy Mikhaylenko <andy@neithere.net>
-#   Linux platform
-#
 # Keith W. Blackwell a.k.a. zimbot from freesound.org
 #   alert.wav, http://www.freesound.org/samplesViewSingle.php?id=122989
 #   License: http://creativecommons.org/licenses/sampling+/1.0/
 #
-########## Supported platforms:
+# Supported platforms:
 # FreeBSD, OpenBSD, Linux
 #
 # Adding a new platform is usually very easy!
 # For information, take a look at the manpage
 #
+
 
 from __future__ import print_function
 
@@ -50,20 +49,15 @@ except ImportError:
 	print('Battray: PyGTK homepage http://www.pygtk.org/', file=sys.stderr)
 	sys.exit(1)
 
-# Only works on Linux and FreeBSD
-try:
-	import ossaudiodev
-except ImportError:
-	print('Unable to load ossaudiodev module')
-	print(sys.exc_info()[1])
-	sys.exit(1)
+# Try to load alsa first, since OSS doesn't work very well on Linux
+try: import alsaaudio
+except ImportError: pass
 
-try:
-	import wave
-except ImportError:
-	print('Unable to load wave module')
-	print(sys.exc_info()[1])
-	sys.exit(1)
+try: import ossaudiodev
+except ImportError: print('Unable to load ossaudiodev module; no sound support')
+
+try: import wave
+except ImportError: print('Unable to load wave module; no sound support')
 
 
 def Usage():
@@ -309,7 +303,7 @@ def SetIcon(tray, ac, charging, percent, lifetime, tooltip=''):
 		# by default on FreeBSD because it pulls in gcc4.4
 		try:
 			pixelArray = icon.get_pixels_array()
-		except RuntimeError:
+		except RuntimeError, ImportError:
 			if _usecolor:
 				_usecolor = False
 				print('Battray: py-gtk2 needs to be compiled with numpy', end=' ', file=sys.stderr)
@@ -340,7 +334,7 @@ def SetIcon(tray, ac, charging, percent, lifetime, tooltip=''):
 		tray.set_blinking(False)
 
 	try:
-		text += '\n' + _p.tooltip
+		if _p.tooltip != '': text += '\n' + _p.tooltip
 	except AttributeError:
 		pass
 
@@ -417,7 +411,8 @@ def play(sound):
 	else:
 		sound = '%s/%s' % (_config['datadir'], sound.strip())
 
-	_thread.start_new_thread(PlaySound, (sound,))
+	#_thread.start_new_thread(PlaySound, (sound,))
+	PlaySound(sound)
 
 def playonce(sound, id):
 	if not _playonce.get(id):
@@ -462,32 +457,62 @@ def PlaySound(soundfile):
 	"""
 	Play a sound.
 	"""
+	def play(device, f):    
+		# Set attributes
+		device.setchannels(f.getnchannels())
+		device.setrate(f.getframerate())
 
-	s = wave.open(soundfile, 'rb')
-	(nc, sw, fr, nf, comptype, compname) = s.getparams()
-
-	try:
-		dsp = ossaudiodev.open('/dev/dsp', 'w')
-	except IOError:
-		print('Unable to open /dev/dsp')
-		print(sys.exc_info()[1])
-		sys.exit(1)
-
-	try:
-		from ossaudiodev import AFMT_S16_NE
-	except ImportError:
-		if byteorder == 'little':
-			AFMT_S16_NE = ossaudiodev.AFMT_S16_LE
+		# 8bit is unsigned in wav files
+		if f.getsampwidth() == 1:
+			device.setformat(alsaaudio.PCM_FORMAT_U8)
+		# Otherwise we assume signed data, little endian
+		elif f.getsampwidth() == 2:
+			device.setformat(alsaaudio.PCM_FORMAT_S16_LE)
+		elif f.getsampwidth() == 3:
+			device.setformat(alsaaudio.PCM_FORMAT_S24_LE)
+		elif f.getsampwidth() == 4:
+			device.setformat(alsaaudio.PCM_FORMAT_S32_LE)
 		else:
-			AFMT_S16_NE = ossaudiodev.AFMT_S16_BE
+			raise ValueError('Unsupported format')
 
-	dsp.setparameters(AFMT_S16_NE, nc, fr)
-	data = s.readframes(nf)
-	s.close()
-	dsp.write(data)
-	dsp.close()
+		device.setperiodsize(320)
+		
+		data = f.readframes(320)
+		while data:
+			# Read data from stdin
+			device.write(data)
+			data = f.readframes(320)
 
-	_thread.exit()
+	wav = wave.open(soundfile, 'rb')
+	device = alsaaudio.PCM(card='default')
+
+	# ALSA
+	if alsaaudio:
+		play(device, wav)
+	# OSS
+	else:
+		(nc, sw, fr, nf, comptype, compname) = wav.getparams()
+
+		try:
+			dsp = ossaudiodev.open('/dev/dsp', 'w')
+		except IOError:
+			print('Unable to open /dev/dsp')
+			print(sys.exc_info()[1])
+			sys.exit(1)
+
+		try:
+			from ossaudiodev import AFMT_S16_NE
+		except ImportError:
+			if byteorder == 'little': AFMT_S16_NE = ossaudiodev.AFMT_S16_LE
+			else: AFMT_S16_NE = ossaudiodev.AFMT_S16_BE
+
+		dsp.setparameters(AFMT_S16_NE, nc, fr)
+		data = wav.readframes(nf)
+		s.close()
+		dsp.write(data)
+		dsp.close()
+
+	#_thread.exit()
 
 if __name__ == '__main__':
 	try:

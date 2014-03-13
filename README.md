@@ -21,6 +21,15 @@ Files & directories installed:
 - `$PREFIX/lib/python/site-packages/battray/`
 - `$PREFIX/share/battray/`
 
+
+Linux & sound
+-------------
+I find it truly flabbergasting that in 15+ years of mucking about, Linux *still*
+can't manage to produce a sound system which just fucking works.  
+Battray uses OSS to make sound, which may or may work out of the box. Ubuntu
+seems to require [special tricks](https://help.ubuntu.com/community/alsa-oss).
+
+
 FreeBSD package
 ---------------
 Available in the ports collection as [sysutils/battray](http://www.freshports.org/sysutils/battray/)

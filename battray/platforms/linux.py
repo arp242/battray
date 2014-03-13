@@ -1,46 +1,77 @@
-# Linux 2.x platform config. Requires acpitool.
-#
-# Send bug reports and suggestions to:
-# Andy Mikhaylenko <andy@neithere.net>
-
-import subprocess
-
-__all__ = ['ac', 'charging', 'percent', 'lifetime', 'tooltip']
-
 ac = charging = None
 percent = lifetime = 999
 
-# XXX what if there are more batteries?
-BATTERY = 'Battery #1'
-
-def _parse(data):
-	lines = data.split('\n')
-	pairs = (x.split(':', 1) for x in lines if x)
-	clean_pairs = ((k.strip(), v.strip()) for k, v in pairs)
-	return dict(clean_pairs)
-
 try:
-	p = subprocess.Popen(['acpitool'], stdout=subprocess.PIPE)
-except OSError:
-	raise OSError('acpitool is required. Try "apt-get install acpitool" '
-								'or whatever makes sense on your distro.')
-data = p.communicate()[0]
-info = _parse(data)
+	# http://upower.freedesktop.org/docs/Device.html
+	import dbus
 
-ac = info['AC adapter'] == 'on-line'
+	bus = dbus.SystemBus()
+	upower = bus.get_object('org.freedesktop.UPower', '/org/freedesktop/UPower/devices/battery_BAT0')
+	iface = dbus.Interface(upower, 'org.freedesktop.DBus.Properties')
+	info = iface.GetAll('org.freedesktop.UPower.Device')
 
-try:
-	# "discharging, 83.18%, 00:31:28"
-	b_status, b_percent, b_life = info[BATTERY].split(', ')
-except ValueError:
-	# "charged, 81.89%"
-	b_status, b_percent = info[BATTERY].split(', ')
-	lifetime = -1
-else:
-	h,m,s = (int(x) for x in b_life.split(':'))
-	lifetime = h + 60*(m + 60*s)
+	if __name__ == '__main__':
+		import pprint
 
-charging = b_status == 'charging'
-percent = float(b_percent[:-1])
+		l = []
+		for k, v in dict(info).iteritems():
+			l.append('%s -> %s' % (k, v))
+		l.sort()
+		for i in l: print(i)
 
-tooltip = ''	#'Hi ;-)'
+	percent = float(info['Percentage'])
+	state = int(info['State'])
+	charging = False
+	if state == 1:
+		ac = True
+		charging = True
+	elif state == 2:
+		ac = False
+	elif state == 4:
+		ac = True
+	else:
+		ac = None
+
+	lifetime = int(info['TimeToEmpty']) / 60
+
+	tooltip = []
+	for line in open('/proc/cpuinfo', 'r').readlines():
+		if line.startswith('cpu MHz'):
+			tooltip.append('%s MHz' % int(float(line.split(':')[1].strip())))
+
+	tooltip = 'CPU frequency: %s' % ' / '.join(tooltip)
+
+
+except ImportError:
+	import subprocess
+
+	try:
+		p = subprocess.Popen(['acpitool'], stdout=subprocess.PIPE)
+	except OSError:
+		raise OSError('You need either Python dbus bindings (recommended) or acpitoo ')
+
+	data = p.communicate()[0]
+
+	for line in data.split('\n'):
+		if line == '': continue
+		k, v = line.strip().split(':', 1)
+
+		k = k.strip().lower()
+		v = v.strip().lower()
+
+		if k.startswith('battery #1'):
+			charging, percent, lifetime = v.split(',')
+			if charging == 'charging': charging = True
+			else: charging = False
+
+			percent = float(percent[:-1])
+
+			h, m, s = [ int(i) for i in lifetime.split(':') ]
+			lifetime = h * 60 + m
+			if lifetime == 0: lifetime = -1
+		elif k == 'ac adapter':
+			if v == 'off-line':
+				ac = False
+				charging = False
+			elif v == 'online':
+				ac = True
