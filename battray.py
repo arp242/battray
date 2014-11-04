@@ -148,24 +148,26 @@ class Battray(object):
 		fill_amount = int(round(self.data['percent'] / 4))
 
 		colors = {
-			'red': b'\xff\x0c\x00\xff',
-			'green': b'\xee\xff\x2d\xff',
-			'yellow': b'\x1e\xff\x19\ff',
+			'red': b'\xff\x0c\x00',
+			'green': b'\xee\xff\x2d',
+			'yellow': b'\x1e\xff\x19',
 		}
 
 		if color in colors:
 			color = colors[color]
 		else:
-			# TODO: We probablt want to convert from HTML-style RGB: #3366aa
-			pass
+			color = bytes('\\x{}\\x{}\\x{}'.format(
+				color[1:3], color[3:5], color[5:7]), 'ascii')
+			color = eval('color')
 
-		# TODO: This doesn't seem to work...
-		fill = GdkPixbuf.Pixbuf.new_from_data(b'\xff\x00\xff', GdkPixbuf.Colorspace.RGB,
-			False, 8, 1, 1, 3)
+		px = GdkPixbuf.PixbufLoader.new_with_type('pnm')
+		px.write(b'P6\n\n1 1\n255\n' + color)
+		px.write(color)
+		px.close()
+		fill = px.get_pixbuf()
 
-		print(fill.get_pixels())
-
-		# http://stackoverflow.com/a/1335618/660921
+		# TODO: This is neat, but go for a more readable method
+		# Got it from: http://stackoverflow.com/a/1335618/660921
 		for row_num, row in enumerate(zip(*(iter(icon.get_pixels()),) * icon.get_rowstride())):
 			# Blank row
 			if 255 not in row: continue
