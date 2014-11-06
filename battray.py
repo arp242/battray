@@ -4,9 +4,9 @@
 #
 # Copyright © 2008-2014 Martin Tournoij <martin@arp242.net>
 # See below for full copyright
-# 
+#
 
-import argparse, logging, os, sys
+import argparse, logging, os, signal, sys
 
 from gi.repository import Gtk, GLib, GdkPixbuf
 
@@ -14,8 +14,8 @@ import battray
 
 
 class Battray(object):
-	def __init__(self, file=None, interval=None, platform=None):
-		self.configfile, self.datadir = battray.find_config()
+	def __init__(self, interval=None, platform=None):
+		self.configfile, self.datadir, self.default_config = battray.find_config()
 		if platform:
 			self.platform = getattr(battray.platforms, platform, None)
 			if self.platform is None:
@@ -30,19 +30,19 @@ class Battray(object):
 		
 		self.menu = Gtk.Menu()
 		refresh = Gtk.MenuItem.new_with_label('Refresh')
-		refresh.connect('activate', self.update_cb)
+		refresh.connect('activate', self.cb_update)
 		self.menu.append(refresh)
 
 		about = Gtk.MenuItem.new_with_label('About')
-		about.connect('activate', self.about_cb)
+		about.connect('activate', self.cb_about)
 		self.menu.append(about)
 
 		quit = Gtk.MenuItem.new_with_label('Quit')
-		quit.connect('activate', self.destroy_cb)
+		quit.connect('activate', self.cb_destroy)
 		self.menu.append(quit)
 
-		self.icon.connect('activate', self.update_cb)
-		self.icon.connect('popup-menu', self.popup_menu_cb)
+		self.icon.connect('activate', self.cb_update)
+		self.icon.connect('popup-menu', self.cb_popup_menu)
 		self.icon.set_visible(True)
 
 		self.update_status()
@@ -68,10 +68,11 @@ class Battray(object):
 		def set_icon(i): nonlocal icon; icon = i
 		def set_color(c): nonlocal color; color = c
 
-		def play_once(s, k):
+		def play_once(f, k):
 			if self.played.get(k): return
 			self.played[k] = True
 			battray.sound.play('{}/{}'.format(self.datadir, f))
+
 		def notify_once(m, l, k):
 			if self.notified.get(k): return
 			self.notified[k] = True
@@ -79,13 +80,14 @@ class Battray(object):
 
 		def reset_play_once(k):
 			if self.played.get(k): self.played[k] = False
+
 		def reset_notify_once(k):
 			if self.notified.get(k): self.notified[k] = False
 
-		exec(open(self.configfile, 'r').read(), {
+		args = {
 			'ac': self.data['ac'],
 			'charging': self.data['charging'],
-			'percent': self.data['ac'],
+			'percent': self.data['percent'],
 			'lifetime': self.data['lifetime'],
 			'switched_to': self.data['switched_to'],
 			'set_icon': set_icon,
@@ -97,12 +99,18 @@ class Battray(object):
 			'notify_once': notify_once,
 			'reset_notify_once': reset_notify_once,
 			'run': self.run,
-		})
+		}
+
+		def source_default():
+			exec(open(self.default_config, 'r').read(), args)
+
+		args.update({'source_default': source_default})
+		exec(open(self.configfile, 'r').read(), args)
 
 		self.set_icon(icon, color)
 		self.set_tooltip()
 
-		return True
+		return True # Required for GLib.timeout_add_seconds
 
 
 	def run(self, cmd):
@@ -120,11 +128,11 @@ class Battray(object):
 			# TODO: This is BSD license, so we could just include it
 			import notify2
 		except ImportError:
-			loggins.warning("pynotify2 not found; desktop notifications won't work")
+			logging.warning("pynotify2 not found; desktop notifications won't work")
 			return
 
 		notify2.init('battray')
-		n = notify2.Notification('Battray', msg, '{}/battery.png'.format(self.datadir))
+		n = notify2.Notification('Battray', msg, '{}/icon.png'.format(self.datadir))
 		n.set_urgency({
 			'low': notify2.URGENCY_LOW,
 			'normal': notify2.URGENCY_NORMAL,
@@ -138,45 +146,46 @@ class Battray(object):
 			iconpath = iconf
 		else:
 			iconpath = '{}/{}'.format(self.datadir, iconf)
+		if '.' not in iconpath: iconpath += '.png'
 		logging.info("setting icon to `{}'".format(iconpath))
 
 		if color is None:
 			self.icon.set_from_file(iconpath)
 			return
 
-		icon = GdkPixbuf.Pixbuf.new_from_file(iconpath)
-		fill_amount = int(round(self.data['percent'] / 4))
-
 		colors = {
-			'red': b'\xff\x0c\x00',
-			'green': b'\xee\xff\x2d',
-			'yellow': b'\x1e\xff\x19',
+			'red': 0xff0c00ff,
+			'yellow': 0xeeff2dff,
+			'green': 0x1eff19ff,
+			'orange': 'TODO',
 		}
+		if color in colors: color = colors[color]
 
-		if color in colors:
-			color = colors[color]
-		else:
-			color = bytes('\\x{}\\x{}\\x{}'.format(
-				color[1:3], color[3:5], color[5:7]), 'ascii')
-			color = eval('color')
+		# TODO: MAybe set colour of outline, as well?
+		fill = GdkPixbuf.Pixbuf.new(GdkPixbuf.Colorspace.RGB, True, 8, 1, 1)
+		fill.fill(color)
 
-		px = GdkPixbuf.PixbufLoader.new_with_type('pnm')
-		px.write(b'P6\n\n1 1\n255\n' + color)
-		px.write(color)
-		px.close()
-		fill = px.get_pixbuf()
+		trans = GdkPixbuf.Pixbuf.new(GdkPixbuf.Colorspace.RGB, True, 8, 1, 1)
+		trans.fill(0)
+
+		icon = GdkPixbuf.Pixbuf.new_from_file(iconpath)
+
+		# TODO: Figure out the longest sequence of pixels to fill, and use that
+		# value to determine how much to fill up; this way it's easier to make
+		# different icons
+		fill_amount = int(round(self.data['percent'] / 4))
 
 		# TODO: This is neat, but go for a more readable method
 		# Got it from: http://stackoverflow.com/a/1335618/660921
 		for row_num, row in enumerate(zip(*(iter(icon.get_pixels()),) * icon.get_rowstride())):
-			# Blank row
-			if 255 not in row: continue
-
 			for col_num, pixel in enumerate(zip(*(iter(row),) * 4)):
 				r, g, b, a = pixel
+				if not (r == 255 and g == 0 and b == 255): continue
 
-				if col_num > 2 and col_num <= fill_amount and a == 0:
+				if col_num <= fill_amount:
 					fill.copy_area(0, 0, 1, 1, icon, col_num, row_num)
+				else:
+					trans.copy_area(0, 0, 1, 1, icon, col_num, row_num)
 
 		self.icon.set_from_pixbuf(icon)
 
@@ -199,14 +208,18 @@ class Battray(object):
 			text.append('Cannot get battery percentage status.\n')
 		else:
 			text.append('{}% battery power remaining.\n'.format(percent))
-		
-		if charging or ac:
-			pass
-		elif lifetime == -1:
+
+		if lifetime == -1:
 			text.append('Unknown lifetime remaining.\n')
-		else:
-			t = lifetime / 60.0
-			text.append('Approximately {:.1f} hours remaining.\n'.format(t))
+		elif charging:
+			hours = int(lifetime // 60.0)
+			minutes = int(lifetime % 60)
+			# TODO: leading 0
+			text.append('Approximately {}:{} remaining.\n'.format(hours, minutes))
+		elif not ac:
+			hours = int(lifetime // 60.0)
+			minutes = int(lifetime % 60)
+			text.append('Approximately {}:{} remaining.\n'.format(hours, minutes))
 
 		if charging == None:
 			pass
@@ -218,29 +231,29 @@ class Battray(object):
 		self.icon.set_tooltip_text(''.join(text))
 
 
-	def destroy_cb(self, widget, data=None):
+	def cb_destroy(self, widget, data=None):
 		self.icon.set_visible(False)
 		Gtk.main_quit()
 		return False
 
 
-	def update_cb(self, widget, data=None):
+	def cb_update(self, widget, data=None):
 		self.update_status()
 
 
-	def popup_menu_cb(self, widget, button, time, data=None):
+	def cb_popup_menu(self, widget, button, time, data=None):
 		self.menu.show_all()
 		self.menu.popup(None, None, Gtk.StatusIcon.position_menu, self.icon, button, time)
 
 
-	def about_cb(self, widget, data=None):
+	def cb_about(self, widget, data=None):
 		about = Gtk.AboutDialog()
 		about.set_artists(['Martin Tournoij <martin@arp242.net>', 'Keith W. Blackwell'])
 		about.set_authors(['Martin Tournoij <martin@arp242.net>'])
 		about.set_comments('Simple program that displays a tray icon to inform you on your notebooks battery status.')
 		about.set_copyright('Copyright © 2008-2014 Martin Tournoij <martin@arp242.net>')
 		about.set_license_type(Gtk.License.MIT_X11)
-		about.set_logo(GdkPixbuf.Pixbuf.new_from_file('{}/battery.png'.format(self.datadir)))
+		about.set_logo(GdkPixbuf.Pixbuf.new_from_file('{}/icon.png'.format(self.datadir)))
 		about.set_program_name('Battray')
 		about.set_version('2.0')
 		about.set_website('http://code.arp242.net/battray')
@@ -253,14 +266,13 @@ if __name__ == '__main__':
 	battray.set_proctitle('battray')
 	parser = argparse.ArgumentParser()
 
-	parser.add_argument('-V', '--verbose', action='store_true',
+	parser.add_argument('-v', '--verbose', action='store_true',
 		help='enable verbose messages')
 	parser.add_argument('-p', '--platform', action='store',
-		help='Platform name; normally this is autodetected')
-	#parser.add_argument('-f', '--file', action='store',
-	#	help='Configuration file')
+		help='''Platform name, a list of platforms can be found in \
+		`battray/platforms.py`; by default this is automatically detected''')
 	parser.add_argument('-i', '--interval', action='store', type=int,
-		help='Poll interval')
+		help='Polling interval in seconds; defaults to 15')
 	args = vars(parser.parse_args())
 	
 	if args['verbose']: logging.basicConfig(level=logging.DEBUG)
@@ -269,6 +281,8 @@ if __name__ == '__main__':
 	Battray(**args)
 
 	try:
+		# Make SIGINT (^C) work; http://stackoverflow.com/a/16486080/660921
+		signal.signal(signal.SIGINT, signal.SIG_DFL)
 		Gtk.main()
 	except KeyboardInterrupt:
 		print('')

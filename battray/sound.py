@@ -5,42 +5,46 @@
 # See below for full copyright
 #
 
-try:
-	import wave
-except ImportError:
-	print('Unable to load wave module; no sound support')
-
-# Try to load alsa first, since OSS doesn't seem to work very well on Linux
-try:
-	import alsaaudio
-except ImportError:
-	try:
-		import ossaudiodev
-	except ImportError:
-		print('Unable to load alsaaudio or ossaudiodev module; no sound support')
+import logging, sys, wave
 
 
-def play(soundfile):
+def play(soundfile, method=None):
 	""" Play a sound; soundfile must be .wav format """
+
+	logging.info('Playing {}'.format(soundfile))
+	if not soundfile.endswith('.wav'): soundfile += '.wav'
 
 	wav = wave.open(soundfile, 'rb')
 
-	if globals().get('alsaaudio'):
-		_alsaplay(wav)
-	elif globals().get('ossaudiodev'):
-		_ossplay(dev, wat)
+	try:
+		if method is not None:
+			method(wav)
+		else:
+			for method in [_ossplay, _alsaplay]:
+				if method(wav) != False:
+					break
+			else:
+				logging.warning('Unable to play sound')
+	finally:
+		wav.close()
 
 
 def _ossplay(wav):
 	""" Play a sound with OSS, for FreeBSD & OpenBSD """
+	
+	try:
+		import ossaudiodev
+	except ImportError:
+		logging.info("_ossplay: Unable to load ossaudiodev module")
+		return False
+
 	(nc, sw, fr, nf, comptype, compname) = wav.getparams()
 
 	try:
 		dev = ossaudiodev.open('/dev/dsp', 'w')
 	except IOError:
-		print('Unable to open /dev/dsp')
-		print(sys.exc_info()[1])
-		return
+		logging.info("_ossplay: Unable to open /dev/dsp; `{}'".format((sys.exc_info()[1])))
+		return False
 
 	try:
 		from ossaudiodev import AFMT_S16_NE
@@ -48,38 +52,48 @@ def _ossplay(wav):
 		if byteorder == 'little': AFMT_S16_NE = ossaudiodev.AFMT_S16_LE
 		else: AFMT_S16_NE = ossaudiodev.AFMT_S16_BE
 
-	dev.setparameters(AFMT_S16_NE, nc, fr)
-	data = wav.readframes(nf)
-	s.close()
-	dev.write(data)
-	dev.close()
+	try:
+		dev.setparameters(AFMT_S16_NE, nc, fr)
+		data = wav.readframes(nf)
+		s.close()
+		dev.write(data)
+	finally:
+		dev.close()
 
 
 def _alsaplay(f):
 	""" Play a sound with ALSA, for Linux """
 
+	try:
+		import alsaaudio
+	except ImportError:
+		logging.info("_alsaaudio: Unable to load alsaaudio module")
+		return False
+
 	dev = alsaaudio.PCM(card='default')
 
-	dev.setchannels(f.getnchannels())
-	dev.setrate(f.getframerate())
+	try:
+		dev.setchannels(f.getnchannels())
+		dev.setrate(f.getframerate())
 
-	if f.getsampwidth() == 1:
-		dev.setformat(alsaaudio.PCM_FORMAT_U8)
-	elif f.getsampwidth() == 2:
-		dev.setformat(alsaaudio.PCM_FORMAT_S16_LE)
-	elif f.getsampwidth() == 3:
-		dev.setformat(alsaaudio.PCM_FORMAT_S24_LE)
-	elif f.getsampwidth() == 4:
-		dev.setformat(alsaaudio.PCM_FORMAT_S32_LE)
-	else:
-		print('Unsupported format')
-		return
+		if f.getsampwidth() == 1:
+			dev.setformat(alsaaudio.PCM_FORMAT_U8)
+		elif f.getsampwidth() == 2:
+			dev.setformat(alsaaudio.PCM_FORMAT_S16_LE)
+		elif f.getsampwidth() == 3:
+			dev.setformat(alsaaudio.PCM_FORMAT_S24_LE)
+		elif f.getsampwidth() == 4:
+			dev.setformat(alsaaudio.PCM_FORMAT_S32_LE)
 
-	dev.setperiodsize(320)
-	data = f.readframes(320)
-	while data:
-		dev.write(data)
+		dev.setperiodsize(320)
 		data = f.readframes(320)
+		while data:
+			dev.write(data)
+			data = f.readframes(320)
+	finally:
+		dev.close()
+
+
 
 
 # The MIT License (MIT)

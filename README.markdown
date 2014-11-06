@@ -17,8 +17,8 @@ Just type `./battray.py` to try it out; or run `./setup.py install` if you like 
 Commandline options
 ===================
 - `-p`, `--platform`  
-  Use this platform, a list of platforms can be found in `battray/platforms.py`;
-  by default this is automatically detected.
+  Platform name, a list of platforms can be found in `battray/platforms.py`; by
+  default this is automatically detected.
 
 - `-i`, `--interval`  
   Polling interval in seconds; defaults to 15.
@@ -28,15 +28,20 @@ Configuration
 =============
 The default settings should be good for most people, but Battray is pretty
 flexible and you can set it up as you like.
-The default configuration is at `/usr/share/battray/battrayrc.py`,
-copy it to `~/.config/battray/battrayrc.py` and edit it, there are a few
-comments to get you started.  
+The default configuration is at `/usr/share/battray/battrayrc.py` or
+`/usr/local/share/battray/battrayrc.py`, copy it to
+`~/.config/battray/battrayrc.py` and edit it, there are a few comments to get
+you started.  
 
 The configuration file is run with `exec()`, so any Python code goes.
 
 
 Available functions
 -------------------
+- `source_default()`  
+  Source the default configuration file; this way you can append the default
+  configuration file with your own commands, rather than completely overwrite it.
+
 - `run(cmd)`  
   Run `cmd` (string) in shell. Note: no escaping will be done on the command.
 
@@ -48,14 +53,16 @@ Available functions
   `id` can be anything.
 
 - `reset_play_once(id)`  
-  Reset the playonce flag for the sound `id`, so it will be played again when
+  Reset the `playonce` flag for the sound `id`, so it will be played again when
   `play_once()` is called for this `id`.
 
 - `set_icon(file)`  
   Set icon to this `file`.
 
 - `set_color('red|yellow|green')`  
-  Fill battery icon with  this  color.
+  Fill battery icon with  this  color; it can either be the colour name `green`,
+  `yellow`, or `red`, or a color code as int: `0xff0000ff` (the last byte is
+  the alpha channel).
 
 - `notify(msg, level)`  
   Send a desktop notification; you need a notification daemon (such as

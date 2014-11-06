@@ -9,10 +9,10 @@
 # ac:        Connected to AC? Boolean, None if unknown.
 # charging:  Are we charging the battery? Boolean, None if unknown.
 # percent:   Battery power remaining in percent (0-100), integer, -1 if unknown.
-# lifetime:  Battery time remaining in minutes, integer, -1 if unknown.
+# lifetime:  Battery time remaining in minutes, or time to full charge, integer, -1 if unknown.
 #
 
-import sys
+import logging, sys
 
 def find():
 	platform = ''
@@ -22,9 +22,10 @@ def find():
 
 	fun = globals().get(platform, None)
 	if fun is None:
-		print('Error: unable to get platform for %s' % platform)
+		print('Error: unable to get platform for %s' % platform, file=sys.stderr)
 		sys.exit(1)
 
+	logging.info('Using platform {}'.format(fun.__name__))
 	return fun
 
 
@@ -108,88 +109,51 @@ def openbsd():
 def linux():
 	"""	 Linux, being Linux, has several incompatible ways of doing this. """
 
-	for linux_sucks in ['linux_acpi', 'linux_acpitool', 'linux_upower']:
+	for linux_sucks in ['linux_sys', 'linux_upower']:
 		result = globals().get(linux_sucks)()
-		if result != False: return result
+		if result != False:
+			logging.info('Using {}'.format(linux_sucks))
+			return result
 	return False
 
 
-def linux_acpi():
-	""" Linux with acpi; this is an interface to /sys/, and maybe it's better if
-	we access that directly, but I can't figure this out since proper documentation
-	is near-nonexistent, and what does exist, is shit. I have better things to
-	do with my life, so just use acpi """
+def linux_sys():
+	"""  """
 
-	import subprocess
+	r = lambda f: open('/sys/class/power_supply/BAT0/{}'.format(f), 'r').read().strip()
+	ri = lambda f: int(r(f))
 
-	try:
-		p = subprocess.Popen(['acpi'], stdout=subprocess.PIPE)
-	except OSError:
-		return False
-
-	data = p.communicate()[0].decode().split(',')
-
-	if 'Discharging' in data[0]:
-		ac = False
-		charging = False
-	elif 'Charging' in data[0]:
+	status = r('status')
+	if status == 'Charging':
 		ac = True
 		charging = True
-	elif 'Full' in data[0]:
+	elif status == 'Discharging':
+		ac = False
+		charging = False
+	elif status == 'Full':
 		ac = True
 		charging = False
+	else:
+		ac = False
+		charging = False
 
-	percent = int(data[1].strip()[:-1])
-	lifetime = -1
+	percent = ri('capacity')
+
+	drain_rate = ri('current_now')
+	remaining = ri('charge_now')
+	full_capacity = ri('charge_full')
+
 	if charging:
-		lifetime = -1 # TODO
-	elif ac == False:
-		lifetime = list(map(int, data[2][:8].split(':')))
-		lifetime = lifetime[0] * 60 + lifetime[1]
+		lifetime = (full_capacity - remaining) / drain_rate * 60
+	else:
+		lifetime = remaining / drain_rate * 60
 
 	return (ac, charging, percent, lifetime)
 
 
-def linux_acpitool():
-	""" Linux with acpitool """
-	import subprocess
-
-	try:
-		p = subprocess.Popen(['acpitool'], stdout=subprocess.PIPE)
-	except OSError:
-		return False
-
-	data = p.communicate()[0].decode()
-
-	for line in data.split('\n'):
-		if line == '': continue
-		k, v = line.strip().split(':', 1)
-
-		k = k.strip().lower()
-		v = v.strip().lower()
-
-		if k.startswith('battery #1'):
-			charging, percent, lifetime = v.split(',')
-			if charging == 'charging': charging = True
-			else: charging = False
-
-			percent = float(percent[:-1])
-
-			h, m, s = [ int(i) for i in lifetime.split(':') ]
-			lifetime = h * 60 + m
-			if lifetime == 0: lifetime = -1
-		elif k == 'ac adapter':
-			if v == 'off-line':
-				ac = False
-				charging = False
-			elif v == 'online':
-				ac = True
-
-
 def linux_upower():
-	""" Linux with UPower """
+	""" Linux with UPower; http://upower.freedesktop.org/docs/Device.html """
 	try:
-		# http://upower.freedesktop.org/docs/Device.html
 		import dbus
 	except ImportError:
 		return False
@@ -198,15 +162,6 @@ def linux_upower():
 	upower = bus.get_object('org.freedesktop.UPower', '/org/freedesktop/UPower/devices/battery_BAT0')
 	iface = dbus.Interface(upower, 'org.freedesktop.DBus.Properties')
 	info = iface.GetAll('org.freedesktop.UPower.Device')
-
-	if __name__ == '__main__':
-		import pprint
-
-		l = []
-		for k, v in dict(info).iteritems():
-			l.append('%s -> %s' % (k, v))
-		l.sort()
-		for i in l: print(i)
 
 	percent = float(info['Percentage'])
 	state = int(info['State'])

@@ -5,7 +5,7 @@
 # See below for full copyright
 #
 
-import os, sys
+import logging, os, sys
 
 from . import platforms, sound
 __all__ = ['platforms', 'sound']
@@ -15,26 +15,29 @@ def find_config():
 	xdg_config_home = '{}/battray'.format(os.getenv('XDG_CONFIG_HOME') or os.path.expanduser('~/.config'))
 	xdg_data_dirs = (os.getenv('XDG_DATA_DIRS') or '/usr/local/share:/usr/share').split(':')
 
-	configfile = data_dir = None
+	configfile = data_dir = default_config = None
+
+	for xdg_data_dir in xdg_data_dirs:
+		d = '{}/battray'.format(xdg_data_dir)
+		if os.path.exists(d):
+			data_dir = d
+
+		f = '{}/battray/battrayrc.py'.format(xdg_data_dir)
+		if os.path.exists(f):
+			default_config = f
+
+	# XDG failed; try to load from cwd
+	mydir = os.path.dirname(os.path.realpath(sys.argv[0]))
+	if default_config is None:
+		f = '{}/data/battrayrc.py'.format(mydir)
+		if os.path.exists(f): default_config = f
 
 	f = '{}/battrayrc.py'.format(xdg_config_home)
 	if os.path.exists(f):
 		configfile = f
 	else:
-		for xdg_data_dir in xdg_data_dirs:
-			d = '{}/battray'.format(xdg_data_dir)
-			if os.path.exists(d):
-				data_dir = d
+		configfile = default_config
 
-			f = '{}/battray/battrayrc.py'.format(xdg_data_dir)
-			if os.path.exists(f):
-				configfile = f
-
-	# XDG failed; try to load from cwd
-	mydir = os.path.dirname(os.path.realpath(sys.argv[0]))
-	if configfile is None:
-		f = '{}/data/battrayrc.py'.format(mydir)
-		if os.path.exists(f): configfile = f
 
 	if configfile is None:
 		raise Exception("Can't find config file")
@@ -46,7 +49,8 @@ def find_config():
 	if data_dir is None:
 		raise Exception("Can't find data dir")
 
-	return configfile, data_dir
+	logging.info('Using {}'.format(configfile))
+	return configfile, data_dir, default_config
 
 
 def set_proctitle(title):
