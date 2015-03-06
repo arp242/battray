@@ -1,15 +1,15 @@
 #
 # http://code.arp242.net/battray
 #
-# Copyright © 2008-2014 Martin Tournoij <martin@arp242.net>
+# Copyright © 2008-2015 Martin Tournoij <martin@arp242.net>
 # See below for full copyright
 #
 # Return False on error
 # Or return tuple with:
 # ac:        Connected to AC? Boolean, None if unknown.
 # charging:  Are we charging the battery? Boolean, None if unknown.
-# percent:   Battery power remaining in percent (0-100), integer, -1 if unknown.
-# lifetime:  Battery time remaining in minutes, or time to full charge, integer, -1 if unknown.
+# percent:   Battery power remaining in percent (0-100), integer, None if unknown.
+# lifetime:  Battery time remaining in minutes, or time to full charge, integer, # Noneif unknown.
 #
 
 import logging, sys
@@ -183,7 +183,7 @@ def linux_upower():
 
 # The MIT License (MIT)
 #
-# Copyright © 2008-2014 Martin Tournoij
+# Copyright © 2008-2015 Martin Tournoij
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to

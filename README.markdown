@@ -75,6 +75,9 @@ Available functions
 - `reset_notify_once(id)`  
   Reset `notift_once()`, like `reset_play_once()`.
 
+- `wall(msg)`  
+  Write `msg` to all ttys; uses `wall(1)`.
+
 
 
 Available variables

@@ -2,7 +2,7 @@
 #
 # http://code.arp242.net/battray
 #
-# Copyright © 2008-2014 Martin Tournoij <martin@arp242.net>
+# Copyright © 2008-2015 Martin Tournoij <martin@arp242.net>
 # See below for full copyright
 #
 
@@ -50,66 +50,68 @@ class Battray(object):
 
 
 	def update_status(self):
-		logging.info('Getting status ...')
-		prev_ac = self.data.get('ac')
-		(self.data['ac'], self.data['charging'], self.data['percent'],
-			self.data['lifetime']) =  self.platform()
+		try:
+			logging.info('Getting status ...')
+			prev_ac = self.data.get('ac')
+			(self.data['ac'], self.data['charging'], self.data['percent'],
+				self.data['lifetime']) =  self.platform()
 
-		logging.info(self.data)
+			logging.info(self.data)
 
-		if self.data['ac'] and not prev_ac:
-			self.data['switched_to'] = 'ac'
-		elif not self.data['ac'] and prev_ac:
-			self.data['switched_to'] = 'battery'
-		else:
-			self.data['switched_to'] = None
+			if self.data['ac'] and not prev_ac:
+				self.data['switched_to'] = 'ac'
+			elif not self.data['ac'] and prev_ac:
+				self.data['switched_to'] = 'battery'
+			else:
+				self.data['switched_to'] = None
 
-		icon = color = None
-		def set_icon(i): nonlocal icon; icon = i
-		def set_color(c): nonlocal color; color = c
+			icon = color = None
+			def set_icon(i): nonlocal icon; icon = i
+			def set_color(c): nonlocal color; color = c
 
-		def play_once(f, k):
-			if self.played.get(k): return
-			self.played[k] = True
-			battray.sound.play('{}/{}'.format(self.datadir, f))
+			def play_once(f, k):
+				if self.played.get(k): return
+				self.played[k] = True
+				battray.sound.play('{}/{}'.format(self.datadir, f))
 
-		def notify_once(m, l, k):
-			if self.notified.get(k): return
-			self.notified[k] = True
-			self.notify(m, l)
+			def notify_once(m, l, k):
+				if self.notified.get(k): return
+				self.notified[k] = True
+				self.notify(m, l)
 
-		def reset_play_once(k):
-			if self.played.get(k): self.played[k] = False
+			def reset_play_once(k):
+				if self.played.get(k): self.played[k] = False
 
-		def reset_notify_once(k):
-			if self.notified.get(k): self.notified[k] = False
+			def reset_notify_once(k):
+				if self.notified.get(k): self.notified[k] = False
 
-		args = {
-			'ac': self.data['ac'],
-			'charging': self.data['charging'],
-			'percent': self.data['percent'],
-			'lifetime': self.data['lifetime'],
-			'switched_to': self.data['switched_to'],
-			'set_icon': set_icon,
-			'set_color': set_color,
-			'play': lambda f: battray.sound.play('{}/{}'.format(self.datadir, f)),
-			'play_once': play_once,
-			'reset_play_once': reset_play_once,
-			'notify': self.notify,
-			'notify_once': notify_once,
-			'reset_notify_once': reset_notify_once,
-			'run': self.run,
-		}
+			args = {
+				'ac': self.data['ac'],
+				'charging': self.data['charging'],
+				'percent': self.data['percent'],
+				'lifetime': self.data['lifetime'],
+				'switched_to': self.data['switched_to'],
+				'set_icon': set_icon,
+				'set_color': set_color,
+				'play': lambda f: battray.sound.play('{}/{}'.format(self.datadir, f)),
+				'play_once': play_once,
+				'reset_play_once': reset_play_once,
+				'notify': self.notify,
+				'notify_once': notify_once,
+				'reset_notify_once': reset_notify_once,
+				'run': self.run,
+			}
 
-		def source_default():
-			exec(open(self.default_config, 'r').read(), args)
+			def source_default():
+				exec(open(self.default_config, 'r').read(), args)
 
-		args.update({'source_default': source_default})
-		exec(open(self.configfile, 'r').read(), args)
+			args.update({'source_default': source_default})
+			exec(open(self.configfile, 'r').read(), args)
 
-		self.set_icon(icon, color)
-		self.set_tooltip()
-
+			self.set_icon(icon, color)
+			self.set_tooltip()
+		except:
+			print('battray error: {}'.format(sys.exc_info()[1]))
 		return True # Required for GLib.timeout_add_seconds
 
 
@@ -154,14 +156,13 @@ class Battray(object):
 			return
 
 		colors = {
+			'green': 0x1eff19ff,
+			'orange': 0xdeb700ff,
 			'red': 0xff0c00ff,
 			'yellow': 0xeeff2dff,
-			'green': 0x1eff19ff,
-			'orange': 'TODO',
 		}
 		if color in colors: color = colors[color]
 
-		# TODO: MAybe set colour of outline, as well?
 		fill = GdkPixbuf.Pixbuf.new(GdkPixbuf.Colorspace.RGB, True, 8, 1, 1)
 		fill.fill(color)
 
@@ -214,8 +215,7 @@ class Battray(object):
 		elif charging:
 			hours = int(lifetime // 60.0)
 			minutes = int(lifetime % 60)
-			# TODO: leading 0
-			text.append('Approximately {}:{} remaining.\n'.format(hours, minutes))
+			text.append('Approximately {:02}:{:02} remaining.\n'.format(hours, minutes))
 		elif not ac:
 			hours = int(lifetime // 60.0)
 			minutes = int(lifetime % 60)
@@ -251,7 +251,7 @@ class Battray(object):
 		about.set_artists(['Martin Tournoij <martin@arp242.net>', 'Keith W. Blackwell'])
 		about.set_authors(['Martin Tournoij <martin@arp242.net>'])
 		about.set_comments('Simple program that displays a tray icon to inform you on your notebooks battery status.')
-		about.set_copyright('Copyright © 2008-2014 Martin Tournoij <martin@arp242.net>')
+		about.set_copyright('Copyright © 2008-2015 Martin Tournoij <martin@arp242.net>')
 		about.set_license_type(Gtk.License.MIT_X11)
 		about.set_logo(GdkPixbuf.Pixbuf.new_from_file('{}/icon.png'.format(self.datadir)))
 		about.set_program_name('Battray')
@@ -291,7 +291,7 @@ if __name__ == '__main__':
 
 # The MIT License (MIT)
 #
-# Copyright © 2008-2014 Martin Tournoij
+# Copyright © 2008-2015 Martin Tournoij
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to
