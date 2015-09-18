@@ -14,16 +14,6 @@ on FreeBSD, OpenBSD, and Linux.
 Just type `./battray.py` to try it out; or run `./setup.py install` if you like it.
 
 
-Commandline options
-===================
-- `-p`, `--platform`  
-  Platform name, a list of platforms can be found in `battray/platforms.py`; by
-  default this is automatically detected.
-
-- `-i`, `--interval`  
-  Polling interval in seconds; defaults to 15.
-
-
 Configuration
 =============
 The default settings should be good for most people, but Battray is pretty
@@ -46,7 +36,8 @@ Available functions
   Run `cmd` (string) in shell. Note: no escaping will be done on the command.
 
 - `play(sound)`  
-   Play a `.wav` file.
+   Play a `.wav` file. If you're on Linux, you'll need the
+   [pyalsaaudio][pyalsaaudio] for this to work.
 
 - `play_once(sound, id)`  
   Play a `.wav` file once, until `reset_playonce()` is called for this `id`;
@@ -104,8 +95,8 @@ Available variables
 ChangeLog
 =========
 
-Version 2.0, to be released
----------------------------
+Version 2.0, 2015-09-18
+-----------------------
 - **Configuration files from previous versions are not compatible**.
 - Use PyGobject instead of PyGTK.
 - Better support for Linux.
@@ -114,7 +105,7 @@ Version 2.0, to be released
 
 
 Version 1.5, 2012-07-11
----------------------
+-----------------------
 - Bugfix: Fix FreeBSD CURRENT/10.
 - Bugfix: Don't panic if there's no battery present (FreeBSD).
 - Bugfix: Properly deal with unknown percentage/lifetime values.
@@ -124,13 +115,13 @@ Version 1.5, 2012-07-11
 
 
 Version 1.4, 2011-09-26
----------------------
+-----------------------
 - Play sounds in a better way (Separate thread, not separate process).
 - Update a few docs.
 
 
 Version 1.3, 2011-07-24
----------------------
+-----------------------
 - **Configuration files from previous versions are not compatible**.
 - Add Linux support (Submitted by Andy Mikhaylenko).
 - Better configuration file/platform file importing.
@@ -140,7 +131,7 @@ Version 1.3, 2011-07-24
 
 
 Version 1.2, 2009-10-22
----------------------
+-----------------------
 - New configuration file syntax, which is much more flexible.
 - Add simple Makefile for easier installation & deinstallation.
 - Add manpage.
@@ -148,7 +139,7 @@ Version 1.2, 2009-10-22
 
 
 Version 1.1, 2009-09-06
----------------------
+-----------------------
 - Battery icon is now green/yellow/red depending on battery life remaining.
 - Battray will now warn you if battery level is below a certain percentage (See warn and warnMethod options in config.py).
 - Reload configuration on SIGHUP.
@@ -159,10 +150,10 @@ Version 1.1, 2009-09-06
 
 
 Version 1.0, 2009-08-16
----------------------
+-----------------------
 - Initial release.
-
 
 
 [dunst]: https://github.com/knopwob/dunst
 [pygobject]: https://wiki.gnome.org/action/show/Projects/PyGObject
+[pyalsaaudio]: https://pypi.python.org/pypi/pyalsaaudio

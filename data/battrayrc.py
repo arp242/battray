@@ -11,8 +11,8 @@ else:         set_icon('error')
 
 # Set the colour for the status indicator.
 #if ac and not charging:  set_color(None)
-if percent <= 20:      set_color('red')
-elif percent <= 50:      set_color('yellow')
+if percent <= 20:        set_color('red')
+elif percent <= 50:      set_color('orange')
 else:                    set_color('green')
 
 # Play sounds if the battery is getting low

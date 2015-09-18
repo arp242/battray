@@ -11,20 +11,27 @@ from . import platforms, sound
 __all__ = ['platforms', 'sound']
 
 
-def find_config():
+def find_config(configfile=None, datadir=None):
 	xdg_config_home = '{}/battray'.format(os.getenv('XDG_CONFIG_HOME') or os.path.expanduser('~/.config'))
-	xdg_data_dirs = (os.getenv('XDG_DATA_DIRS') or '/usr/local/share:/usr/share').split(':')
+	xdg_datadirs = (os.getenv('XDG_DATA_DIRS') or '/usr/local/share:/usr/share').split(':')
 
-	configfile = data_dir = default_config = None
+	default_config = None
 
-	for xdg_data_dir in xdg_data_dirs:
-		d = '{}/battray'.format(xdg_data_dir)
-		if os.path.exists(d):
-			data_dir = d
-
-		f = '{}/battray/battrayrc.py'.format(xdg_data_dir)
+	if datadir is not None:
+		f = '{}/battray/battrayrc.py'.format(datadir)
 		if os.path.exists(f):
 			default_config = f
+
+	for xdg_datadir in xdg_datadirs:
+		if datadir is None:
+			d = '{}/battray'.format(xdg_datadir)
+			if os.path.exists(d):
+				datadir = d
+
+		if default_config is None:
+			f = '{}/battray/battrayrc.py'.format(xdg_datadir)
+			if os.path.exists(f):
+				default_config = f
 
 	# XDG failed; try to load from cwd
 	mydir = os.path.dirname(os.path.realpath(sys.argv[0]))
@@ -32,25 +39,25 @@ def find_config():
 		f = '{}/data/battrayrc.py'.format(mydir)
 		if os.path.exists(f): default_config = f
 
-	f = '{}/battrayrc.py'.format(xdg_config_home)
-	if os.path.exists(f):
-		configfile = f
-	else:
-		configfile = default_config
-
+	if configfile is None:
+		f = '{}/battrayrc.py'.format(xdg_config_home)
+		if os.path.exists(f):
+			configfile = f
+		else:
+			configfile = default_config
 
 	if configfile is None:
 		raise Exception("Can't find config file")
 
-	if data_dir is None:
+	if datadir is None:
 		d = '{}/data'.format(mydir)
-		if os.path.exists(d): data_dir = d
+		if os.path.exists(d): datadir = d
 
-	if data_dir is None:
+	if datadir is None:
 		raise Exception("Can't find data dir")
 
 	logging.info('Using {}'.format(configfile))
-	return configfile, data_dir, default_config
+	return configfile, datadir, default_config
 
 
 def set_proctitle(title):

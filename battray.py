@@ -14,8 +14,9 @@ import battray
 
 
 class Battray(object):
-	def __init__(self, interval=None, platform=None):
-		self.configfile, self.datadir, self.default_config = battray.find_config()
+	def __init__(self, interval=None, configfile=None, platform=None, datadir=None):
+		self.configfile, self.datadir, self.default_config = battray.find_config(configfile, datadir)
+
 		if platform:
 			self.platform = getattr(battray.platforms, platform, None)
 			if self.platform is None:
@@ -273,6 +274,10 @@ if __name__ == '__main__':
 		`battray/platforms.py`; by default this is automatically detected''')
 	parser.add_argument('-i', '--interval', action='store', type=int,
 		help='Polling interval in seconds; defaults to 15')
+	parser.add_argument('-c', '--configfile', action='store',
+			help='''Config file to use''')
+	parser.add_argument('-d', '--datadir', action='store',
+			help='''Data dir to use for image, sounds, etc.''')
 	args = vars(parser.parse_args())
 	
 	if args['verbose']: logging.basicConfig(level=logging.DEBUG)

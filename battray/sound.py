@@ -70,8 +70,7 @@ def _alsaplay(f):
 		logging.info("_alsaaudio: Unable to load alsaaudio module")
 		return False
 
-	dev = alsaaudio.PCM(card='default')
-
+	dev = alsaaudio.PCM()
 	try:
 		dev.setchannels(f.getnchannels())
 		dev.setrate(f.getframerate())
