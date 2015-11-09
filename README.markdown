@@ -95,6 +95,13 @@ Available variables
 ChangeLog
 =========
 
+Version 2.0, 2015-11-09
+-----------------------
+- Fix for some versions of Ubuntu
+- Move some stuff around so we can show a clear message that only Python 3 is
+  supported.
+
+
 Version 2.0, 2015-09-18
 -----------------------
 - **Configuration files from previous versions are not compatible**.

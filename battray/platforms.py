@@ -109,6 +109,7 @@ def openbsd():
 def linux():
 	"""	 Linux, being Linux, has several incompatible ways of doing this. """
 
+
 	for linux_sucks in ['linux_sys', 'linux_upower']:
 		result = globals().get(linux_sucks)()
 		if result != False:
@@ -145,8 +146,10 @@ def linux_sys():
 
 	if charging:
 		lifetime = (full_capacity - remaining) / drain_rate * 60
-	else:
+	elif drain_rate > 0:
 		lifetime = remaining / drain_rate * 60
+	else:
+		lifetime = -1
 
 	return (ac, charging, percent, lifetime)
 
