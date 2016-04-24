@@ -2,7 +2,7 @@
 #
 # http://code.arp242.net/battray
 #
-# Copyright © 2008-2015 Martin Tournoij <martin@arp242.net>
+# Copyright © 2008-2016 Martin Tournoij <martin@arp242.net>
 # See below for full copyright
 #
 
@@ -131,8 +131,8 @@ class Battray(object):
 		try:
 			logging.info('Getting status ...')
 			prev_ac = self.data.get('ac')
-			(self.data['ac'], self.data['charging'], self.data['percent'],
-				self.data['lifetime']) =  self.platform()
+			(self.data['bats'], self.data['ac'], self.data['charging'],
+				self.data['percent'], self.data['lifetime']) = self.platform()
 
 			logging.info(self.data)
 
@@ -164,6 +164,7 @@ class Battray(object):
 				if self.notified.get(k): self.notified[k] = False
 
 			args = {
+				'bats': self.data['bats'],
 				'ac': self.data['ac'],
 				'charging': self.data['charging'],
 				'percent': self.data['percent'],
@@ -273,10 +274,15 @@ class Battray(object):
 
 
 	def set_tooltip(self):
+		bats = self.data['bats']
 		ac = self.data['ac']
 		charging = self.data['charging']
 		percent = self.data['percent']
 		lifetime = self.data['lifetime']
+
+		if bats == 0:
+			self.icon.set_tooltip_text('No battery present.')
+			return
 
 		text = []
 		if ac == None:
@@ -332,11 +338,11 @@ class Battray(object):
 		about.set_artists(['Martin Tournoij <martin@arp242.net>', 'Keith W. Blackwell'])
 		about.set_authors(['Martin Tournoij <martin@arp242.net>'])
 		about.set_comments('Simple program that displays a tray icon to inform you on your notebooks battery status.')
-		about.set_copyright('Copyright © 2008-2015 Martin Tournoij <martin@arp242.net>')
+		about.set_copyright('Copyright © 2008-2016 Martin Tournoij <martin@arp242.net>')
 		about.set_license_type(Gtk.License.MIT_X11)
 		about.set_logo(GdkPixbuf.Pixbuf.new_from_file('{}/icon.png'.format(self.datadir)))
 		about.set_program_name('Battray')
-		about.set_version('2.1')
+		about.set_version('2.2')
 		about.set_website('http://code.arp242.net/battray')
 
 		about.run()
@@ -344,7 +350,7 @@ class Battray(object):
 
 # The MIT License (MIT)
 #
-# Copyright © 2008-2015 Martin Tournoij
+# Copyright © 2008-2016 Martin Tournoij
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to

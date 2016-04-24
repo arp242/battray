@@ -15,7 +15,7 @@ shutil.copyfile('battray.py', 'build/_scripts/battray')
 
 setup(
 	name = 'battray',
-	version = '2.1',
+	version = '2.2',
 	author = 'Martin Tournoij',
 	author_email = 'martin@arp242.net',
 	url = 'http://code.arp242.net/battray',

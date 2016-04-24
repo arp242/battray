@@ -1,18 +1,23 @@
 #
 # http://code.arp242.net/battray
 #
-# Copyright © 2008-2015 Martin Tournoij <martin@arp242.net>
+# Copyright © 2008-2016 Martin Tournoij <martin@arp242.net>
 # See below for full copyright
 #
 # Return False on error
+#
 # Or return tuple with:
+#
+# bats:      Number of batteries (only 0 and 1 is acted on, more batteries are
+#            ignored for now).
 # ac:        Connected to AC? Boolean, None if unknown.
 # charging:  Are we charging the battery? Boolean, None if unknown.
 # percent:   Battery power remaining in percent (0-100), integer, None if unknown.
-# lifetime:  Battery time remaining in minutes, or time to full charge, integer, # Noneif unknown.
+# lifetime:  Battery time remaining in minutes, or time to full charge, integer,
+#            None if unknown.
 #
 
-import logging, sys
+import logging, sys, os
 
 def find():
 	platform = ''
@@ -64,7 +69,7 @@ def freebsd():
 	if charging:
 		ac = True
 
-	return (ac, charging, percent, lifetime)
+	return (1, ac, charging, percent, lifetime)
 
 
 def openbsd():
@@ -78,11 +83,17 @@ def openbsd():
 	def sysctl(name):
 		o = subprocess.Popen(['/sbin/sysctl', name], stdout=subprocess.PIPE,
 			stderr=subprocess.PIPE).communicate()[0].decode()
-		(name, value) = o.split('=')
+		try:
+			(name, value) = o.split('=')
+		except ValueError:
+			value = None
 		return value
 
-	o = subprocess.Popen(['/usr/sbin/apm', '-alm'], stdout=subprocess.PIPE).communicate()[0]
-	(percent, lifetime, ac) = o.decode().split()
+	o = subprocess.Popen(['/usr/sbin/apm', '-balm'], stdout=subprocess.PIPE).communicate()[0]
+	(bstat, percent, lifetime, ac) = o.decode().split()
+
+	if bstat == '4':
+		return (0, 1, 0, 0, 0)
 
 	if ac == '0':
 		ac = False
@@ -92,7 +103,8 @@ def openbsd():
 		ac = None
 
 	# apm output is not always reliable ...
-	if sysctl('hw.sensors.acpibat0.raw0')[:1] == '2':
+	b = sysctl('hw.sensors.acpibat0.raw0')
+	if b and b[:1] == '2':
 		charging = True
 	else:
 		charging = False
@@ -103,13 +115,11 @@ def openbsd():
 	else:
 		lifetime = float(lifetime) * 60
 
-	return (ac, charging, percent, lifetime)
+	return (1, ac, charging, percent, lifetime)
 
 
 def linux():
 	"""	 Linux, being Linux, has several incompatible ways of doing this. """
-
-
 	for linux_sucks in ['linux_sys', 'linux_upower']:
 		result = globals().get(linux_sucks)()
 		if result != False:
@@ -120,6 +130,9 @@ def linux():
 
 def linux_sys():
 	"""  """
+
+	if not os.path.exists('/sys/class/power_supply/BAT0'):
+		return (0, True, 0, 0, 0)
 
 	r = lambda f: open('/sys/class/power_supply/BAT0/{}'.format(f), 'r').read().strip()
 	ri = lambda f: int(r(f))
@@ -151,7 +164,7 @@ def linux_sys():
 	else:
 		lifetime = -1
 
-	return (ac, charging, percent, lifetime)
+	return (1, ac, charging, percent, lifetime)
 
 
 def linux_upower():
@@ -181,12 +194,12 @@ def linux_upower():
 
 	lifetime = int(info['TimeToEmpty']) / 60
 
-	return (ac, charging, percent, lifetime)
+	return (1, ac, charging, percent, lifetime)
 
 
 # The MIT License (MIT)
 #
-# Copyright © 2008-2015 Martin Tournoij
+# Copyright © 2008-2016 Martin Tournoij
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to
