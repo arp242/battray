@@ -2,7 +2,7 @@ Project status: stable
 
 -----------------------------------------
 
-Battray is a fairly simply tray icon to show your laptop’s battery status.
+Battray is a fairly simple tray icon to show your laptop’s battery status.
 It's simple, easy, fairly environment-independent, and ‘just works’ without
 tons of {Gnome,KDE,..} dependencies.
 
@@ -12,6 +12,13 @@ dim the screen when you switch from AC to battery, etc.
 
 Installation
 ============
+The quickest is to install it with `pip`:
+
+    pip install battray
+
+Manual instructions
+-------------------
+
 Battray requires Python 3.2+ with GTK (through [PyGObject][pygobject]). It runs
 on FreeBSD, OpenBSD, and Linux.
 
