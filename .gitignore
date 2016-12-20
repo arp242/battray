@@ -1,4 +1,3 @@
-syntax: glob
 build
 *.pyc
 battray.egg-info/*
