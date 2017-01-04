@@ -172,6 +172,9 @@ def linux_upower():
 	try:
 		import dbus
 	except ImportError:
+		print('battray: "import dbus" failed; not trying UPower', file=sys.stderr)
+		print('battray: if you would like to use UPower then install dbus-python:', file=sys.stderr)
+		print('battray: pip install dbus-python', file=sys.stderr)
 		return False
 
 	bus = dbus.SystemBus()
