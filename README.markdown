@@ -117,7 +117,7 @@ ChangeLog
 Version 2.3, unreleased
 -----------------------
 - Linux: Show warning if we can't import the `dbus` module.
-- Linux: Fix for systems that have `BAT1` but not `BAT1`.
+- Linux: Fix for systems that have `BAT1` but not `BAT0`.
 
 Version 2.2, 2016-04-24
 -----------------------
