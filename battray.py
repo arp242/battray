@@ -3,7 +3,7 @@
 #
 # http://code.arp242.net/battray
 #
-# Copyright © 2008-2016 Martin Tournoij <martin@arp242.net>
+# Copyright © 2008-2017 Martin Tournoij <martin@arp242.net>
 # See below for full copyright
 #
 
@@ -53,7 +53,7 @@ if __name__ == '__main__':
 
 # The MIT License (MIT)
 #
-# Copyright © 2008-2016 Martin Tournoij
+# Copyright © 2008-2017 Martin Tournoij
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to

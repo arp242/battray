@@ -2,7 +2,7 @@
 #
 # http://code.arp242.net/battray
 #
-# Copyright © 2008-2016 Martin Tournoij <martin@arp242.net>
+# Copyright © 2008-2017 Martin Tournoij <martin@arp242.net>
 # See below for full copyright
 #
 
@@ -338,7 +338,7 @@ class Battray(object):
 		about.set_artists(['Martin Tournoij <martin@arp242.net>', 'Keith W. Blackwell'])
 		about.set_authors(['Martin Tournoij <martin@arp242.net>'])
 		about.set_comments('Simple program that displays a tray icon to inform you on your notebooks battery status.')
-		about.set_copyright('Copyright © 2008-2016 Martin Tournoij <martin@arp242.net>')
+		about.set_copyright('Copyright © 2008-2017 Martin Tournoij <martin@arp242.net>')
 		about.set_license_type(Gtk.License.MIT_X11)
 		about.set_logo(GdkPixbuf.Pixbuf.new_from_file('{}/icon.png'.format(self.datadir)))
 		about.set_program_name('Battray')
@@ -350,7 +350,7 @@ class Battray(object):
 
 # The MIT License (MIT)
 #
-# Copyright © 2008-2016 Martin Tournoij
+# Copyright © 2008-2017 Martin Tournoij
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to
