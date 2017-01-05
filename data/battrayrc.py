@@ -1,3 +1,8 @@
+#
+# Default battray configuration file. For local modification copy it to:
+#   ~/.config/battray/battrayrc.py
+#
+
 # Source the default configuration file; this way you can append the default
 # configuration file with your own commands, rather than completely overwrite
 # it.
