@@ -141,7 +141,7 @@ def linux_sys():
 			break
 
 	if path is None:
-		return (0, True, 0, 0, 0)
+		return False
 
 	r = lambda f: open(path.format(f), 'r').read().strip()
 	ri = lambda f: int(r(f))
