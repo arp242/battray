@@ -135,7 +135,7 @@ def linux_sys():
 	# Some systems seem to have BAT1 but not BAT0, so use the first one we
 	# encounter.
 	for i in range(0, 4):
-		p = '/sys/class/power_supply/BAT{}'.format(i)
+		p = '/sys/class/power_supply/BAT{}/status'.format(i)
 		if os.path.exists(p):
 			path = p
 			break
@@ -143,7 +143,7 @@ def linux_sys():
 	if path is None:
 		return False
 
-	r = lambda f: open(path.format(f), 'r').read().strip()
+	r = lambda f: open('{}/{}'.format(path, f), 'r').read().strip()
 	ri = lambda f: int(r(f))
 
 	status = r('status')
