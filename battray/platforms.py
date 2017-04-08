@@ -38,13 +38,13 @@ def freebsd():
 	""" FreeBSD, should work at least for 8 and newer """
 	import subprocess
 
-	o = subprocess.Popen(['acpiconf', '-i0'], stdout=subprocess.PIPE).communicate()[0]
+	o = subprocess.Popen(['acpiconf', '-i0'], stdout=subprocess.PIPE).communicate()[0].decode()
 
 	for line in o.split('\n'):
 		if line.find(':') == -1:
 			continue
 		(key, value) = line.split(':', 1)
-		
+
 		if key.strip() == 'Remaining capacity':
 			percent = int(value.strip().replace('%', ''))
 		elif key.strip() == 'Remaining time':
