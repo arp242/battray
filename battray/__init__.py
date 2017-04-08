@@ -306,7 +306,7 @@ class Battray(object):
 		elif not ac:
 			hours = int(lifetime // 60.0)
 			minutes = int(lifetime % 60)
-			text.append('Approximately {}:{} remaining.\n'.format(hours, minutes))
+			text.append('Approximately {:02}:{:02} remaining.\n'.format(hours, minutes))
 
 		if charging == None:
 			pass
