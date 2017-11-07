@@ -342,7 +342,7 @@ class Battray(object):
         about.set_license_type(Gtk.License.MIT_X11)
         about.set_logo(GdkPixbuf.Pixbuf.new_from_file('{}/icon.png'.format(self.datadir)))
         about.set_program_name('Battray')
-        about.set_version('2.2')
+        about.set_version('2.3')
         about.set_website('http://code.arp242.net/battray')
 
         about.run()

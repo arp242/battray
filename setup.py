@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+#
+# ./setup.py sdist upload
+# ./setup.py bdist_wheel upload
+# ./setup.py bdist_wininst
 
 import glob, os, shutil, sys
 
@@ -14,7 +18,7 @@ shutil.copyfile('battray.py', 'build/_scripts/battray')
 
 setup(
     name = 'battray',
-    version = '2.2',
+    version = '2.3',
     author = 'Martin Tournoij',
     author_email = 'martin@arp242.net',
     url = 'http://arp242.net/code/battray',
