@@ -14,41 +14,41 @@ gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk
 
 if sys.version_info[0] < 3:
-	print('Error: you need Python 3 to run batray')
-	sys.exit(1)
+    print('Error: you need Python 3 to run batray')
+    sys.exit(1)
 
 import battray
 
 
 if __name__ == '__main__':
-	battray.set_proctitle('battray')
-	parser = argparse.ArgumentParser()
+    battray.set_proctitle('battray')
+    parser = argparse.ArgumentParser()
 
-	parser.add_argument('-v', '--verbose', action='store_true',
-		help='enable verbose messages')
-	parser.add_argument('-p', '--platform', action='store',
-		help='''Platform name, a list of platforms can be found in \
-		`battray/platforms.py`; by default this is automatically detected''')
-	parser.add_argument('-i', '--interval', action='store', type=int,
-		help='Polling interval in seconds; defaults to 15')
-	parser.add_argument('-c', '--configfile', action='store',
-			help='''Config file to use''')
-	parser.add_argument('-d', '--datadir', action='store',
-			help='''Data dir to use for image, sounds, etc.''')
-	args = vars(parser.parse_args())
-	
-	if args['verbose']: logging.basicConfig(level=logging.DEBUG)
-	del args['verbose']
+    parser.add_argument('-v', '--verbose', action='store_true',
+        help='enable verbose messages')
+    parser.add_argument('-p', '--platform', action='store',
+        help='''Platform name, a list of platforms can be found in \
+        `battray/platforms.py`; by default this is automatically detected''')
+    parser.add_argument('-i', '--interval', action='store', type=int,
+        help='Polling interval in seconds; defaults to 15')
+    parser.add_argument('-c', '--configfile', action='store',
+            help='''Config file to use''')
+    parser.add_argument('-d', '--datadir', action='store',
+            help='''Data dir to use for image, sounds, etc.''')
+    args = vars(parser.parse_args())
 
-	battray.Battray(**args)
+    if args['verbose']: logging.basicConfig(level=logging.DEBUG)
+    del args['verbose']
 
-	try:
-		# Make SIGINT (^C) work; http://stackoverflow.com/a/16486080/660921
-		signal.signal(signal.SIGINT, signal.SIG_DFL)
-		Gtk.main()
-	except KeyboardInterrupt:
-		print('')
-		sys.exit(0)
+    battray.Battray(**args)
+
+    try:
+        # Make SIGINT (^C) work; http://stackoverflow.com/a/16486080/660921
+        signal.signal(signal.SIGINT, signal.SIG_DFL)
+        Gtk.main()
+    except KeyboardInterrupt:
+        print('')
+        sys.exit(0)
 
 
 # The MIT License (MIT)
