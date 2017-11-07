@@ -120,27 +120,84 @@ def openbsd():
 
 def linux():
 	"""	 Linux, being Linux, has several incompatible ways of doing this. """
-	for linux_sucks in ['linux_sys', 'linux_upower']:
+
+    # Disabled because getting it through /sys/ doesn't seem to work very
+    # reliably any more :-/
+	#for linux_sucks in ['linux_upower', 'linux_sys_new', 'linux_sys_old']:
+	for linux_sucks in ['linux_upower']:
 		result = globals().get(linux_sucks)()
 		if result != False:
 			logging.info('Using {}'.format(linux_sucks))
 			return result
 	return False
 
-
-def linux_sys():
+'''
+def linux_sys_new():
 	"""  """
 
 	path = None
 	# Some systems seem to have BAT1 but not BAT0, so use the first one we
 	# encounter.
 	for i in range(0, 4):
-		p = '/sys/class/power_supply/BAT{}/status'.format(i)
+		p = '/sys/class/power_supply/BAT{}'.format(i)
 		if os.path.exists(p):
 			path = p
 			break
 
 	if path is None:
+		return False
+
+	if not os.path.exists('{}/energy_now'.format(path)):
+		return False
+
+	r = lambda f: open('{}/{}'.format(path, f), 'r').read().strip()
+	ri = lambda f: int(r(f))
+
+	status = r('status')
+	if status == 'Charging':
+		ac = True
+		charging = True
+	elif status == 'Discharging':
+		ac = False
+		charging = False
+	elif status == 'Full':
+		ac = True
+		charging = False
+	else:
+		ac = False
+		charging = False
+
+	percent = ri('capacity')
+	drain_rate = ri('power_now')
+	full_capacity = ri('energy_full')
+	remaining = ri('energy_now')
+
+	if charging:
+		lifetime = (full_capacity - remaining) / drain_rate * 60
+	elif drain_rate > 0:
+		lifetime = remaining / drain_rate * 60
+	else:
+		lifetime = -1
+
+	return (1, ac, charging, percent, lifetime)
+
+
+def linux_sys_old():
+	"""  """
+
+	path = None
+	# Some systems seem to have BAT1 but not BAT0, so use the first one we
+	# encounter.
+	for i in range(0, 4):
+		p = '/sys/class/power_supply/BAT{}'.format(i)
+		if os.path.exists(p):
+			path = p
+			break
+
+	if path is None:
+		return False
+
+	if not os.path.exists('{}/current_now'.format(path)):
 		return False
 
 	r = lambda f: open('{}/{}'.format(path, f), 'r').read().strip()
@@ -174,6 +231,7 @@ def linux_sys():
 		lifetime = -1
 
 	return (1, ac, charging, percent, lifetime)
+'''
 
 
 def linux_upower():
@@ -181,13 +239,15 @@ def linux_upower():
 	try:
 		import dbus
 	except ImportError:
-		print('battray: "import dbus" failed; not trying UPower', file=sys.stderr)
-		print('battray: if you would like to use UPower then install dbus-python:', file=sys.stderr)
+		#print('battray: "import dbus" failed; not trying UPower', file=sys.stderr)
+		#print('battray: if you would like to use UPower then install dbus-python:', file=sys.stderr)
+		print('battray: "import dbus" failed; this is required for Linux; install it with:', file=sys.stderr)
 		print('battray: pip install dbus-python', file=sys.stderr)
 		return False
 
 	bus = dbus.SystemBus()
 	upower = bus.get_object('org.freedesktop.UPower', '/org/freedesktop/UPower/devices/battery_BAT0')
+	#upower = bus.get_object('org.freedesktop.UPower', '/org/freedesktop/UPower/devices/battery_BAT1')
 	iface = dbus.Interface(upower, 'org.freedesktop.DBus.Properties')
 	info = iface.GetAll('org.freedesktop.UPower.Device')
 
@@ -204,7 +264,10 @@ def linux_upower():
 	else:
 		ac = None
 
-	lifetime = int(info['TimeToEmpty']) / 60
+	if charging:
+		lifetime = int(info['TimeToFull']) / 60
+	else:
+		lifetime = int(info['TimeToEmpty']) / 60
 
 	return (1, ac, charging, percent, lifetime)
 
