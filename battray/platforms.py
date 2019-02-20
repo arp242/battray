@@ -123,15 +123,17 @@ def linux():
 
     # Disabled because getting it through /sys/ doesn't seem to work very
     # reliably any more :-/
-    #for linux_sucks in ['linux_upower', 'linux_sys_new', 'linux_sys_old']:
-    for linux_sucks in ['linux_upower']:
-        result = globals().get(linux_sucks)()
+    for linux_sucks in ['linux_upower', 'linux_sys_new', 'linux_sys_old']:
+        try:
+            result = globals().get(linux_sucks)()
+        except Exception as exc:
+            logging.warning(exc)
+            continue
         if result != False:
             logging.info('Using {}'.format(linux_sucks))
             return result
     return False
 
-'''
 def linux_sys_new():
     """  """
 
@@ -231,7 +233,6 @@ def linux_sys_old():
         lifetime = -1
 
     return (1, ac, charging, percent, lifetime)
-'''
 
 
 def linux_upower():

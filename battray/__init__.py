@@ -291,7 +291,7 @@ class Battray(object):
             text.append('Connected to AC power.\n')
         elif not ac:
             text.append('Running on battery.\n')
-        
+
         if percent == -1:
             text.append('Cannot get battery percentage status.\n')
         else:
