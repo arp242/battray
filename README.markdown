@@ -1,4 +1,4 @@
-[![This project is considered stable](https://img.shields.io/badge/Status-stable-green.svg)](https://arp242.net/status/stable)
+[![This project is archived](https://img.shields.io/badge/Status-archived-red.svg)](https://arp242.net/status/archived)
 [![PyPI](https://img.shields.io/pypi/v/battray.svg)](https://pypi.python.org/pypi/battray)
 
 Battray is a simple tray icon to show your laptop’s battery status. It's simple,
